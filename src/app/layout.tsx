@@ -1,4 +1,3 @@
-
 import "@/styles/globals.css";
 
 import { type Metadata } from "next";
@@ -8,6 +7,7 @@ import { TRPCReactProvider } from "@/trpc/react";
 import { ConvexClientProvider } from "./ConvexClientProvider";
 
 import { ClerkProvider } from "@clerk/nextjs";
+import { dark } from "@clerk/themes";
 
 export const metadata: Metadata = {
   title: "Create T3 App",
@@ -28,7 +28,9 @@ export default function RootLayout({
       <body>
         <TRPCReactProvider>
           <ConvexClientProvider>
-            <ClerkProvider>
+            <ClerkProvider appearance={{
+              baseTheme: dark,
+            }}>
               {children}
             </ClerkProvider>
           </ConvexClientProvider>

@@ -1,13 +1,14 @@
 'use client'
 
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
-import { MessageCircleIcon, PlusIcon, SparklesIcon } from 'lucide-react'
+import { ChevronDownIcon, LogInIcon, LogOutIcon, MessageCircleIcon, PlusIcon, SparklesIcon, UserIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import React, { useEffect, useState } from 'react'
-import type { ChatType } from '@/lib/types'
+import React from 'react'
 import { useMutation, useQuery } from 'convex/react'
 import { api } from 'convex/_generated/api'
+import { SignedIn, SignedOut, SignInButton, useClerk, UserButton, useUser } from '@clerk/nextjs'
+import { DropdownMenu } from './ui/dropdown-menu'
 
 // const chats = [
 //   {
@@ -19,6 +20,8 @@ import { api } from 'convex/_generated/api'
 
 const LayoutWithSidebar = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter()
+  const { user } = useUser()
+  const { signOut } = useClerk()
 
   // const [chats, setChats] = useState<ChatType[]>([])
   const chats = useQuery(api.chats.getAllChats)
@@ -84,12 +87,38 @@ const LayoutWithSidebar = ({ children }: { children: React.ReactNode }) => {
               </SidebarGroupContent>
             </SidebarGroup>
           </SidebarContent>
-          <SidebarFooter>
-
+          <SidebarFooter className='flex flex-row items-center justify-between bg-neutral-950 border-t border-neutral-700 text-white p-4'>
+            <SignedOut>
+              <SignInButton mode='modal'>
+                <div className='flex flex-row items-center gap-2 justify-center cursor-pointer w-full'>
+                  <LogInIcon className='size-4' />
+                  <span>Sign In</span>
+                </div>
+              </SignInButton>
+            </SignedOut>
+            <SignedIn>
+              {/* <Link href="/profile" className='flex items-center gap-2 justify-center cursor-pointer w-full'> */}
+              <div className='flex flex-row items-center gap-2 justify-center cursor-pointer w-full relative overflow-hidden'>
+                <UserButton showName={true} appearance={{
+                  variables: {
+                    fontSize: '1rem',
+                    fontWeight: {
+                      medium: 300,
+                    }
+                  },
+                  elements: {
+                    userButtonBox: {
+                      padding: '0 2rem',
+                    }
+                  }
+                }} />
+              </div>
+              {/* </Link> */}
+            </SignedIn>
           </SidebarFooter>
         </Sidebar>
         <div className='flex flex-row flex-1 relative bg-neutral-950'>
-          <SidebarTrigger className='size-10 bg-transparent text-white cursor-pointer p-4 m-2 hover:bg-transparent hover:text-white z-90' />
+          <SidebarTrigger className='size-10 bg-transparent text-white cursor-pointer p-4 m-2 hover:bg-transparent hover:text-white z-1' />
           <div className="flex-1 -ml-14 p-4 overflow-hidden">
             { children }
           </div>
