@@ -80,7 +80,7 @@ const LayoutWithSidebar = ({ children }: { children: React.ReactNode }) => {
           </SidebarContent>
         </Sidebar>
         <div className='flex flex-row flex-1 relative bg-neutral-950'>
-          <SidebarTrigger className='size-10 bg-transparent text-white cursor-pointer p-4 m-2 hover:bg-transparent hover:text-white' />
+          <SidebarTrigger className='size-10 bg-transparent text-white cursor-pointer p-4 m-2 hover:bg-transparent hover:text-white z-90' />
           <div className="flex-1 -ml-14 p-4 overflow-hidden">
             { children }
           </div>
