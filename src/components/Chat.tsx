@@ -5,10 +5,11 @@ import type React from "react"
 import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { ArrowUp } from "lucide-react"
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { ScrollArea } from "@/components/scroll-area"
+import type { ChatType, MessageType } from "@/lib/types"
 
 // Mock data for demonstration
-const mockMessages = [
+const mockMessages: MessageType[] = [
   {
     id: "1",
     role: "assistant" as const,
@@ -38,11 +39,22 @@ const mockMessages = [
   },
 ]
 
-export default function Chat() {
-  const [messages, setMessages] = useState(mockMessages)
+export default function Chat({ id }: { id: string }) {
+  const [messages, setMessages] = useState<MessageType[]>([]) // mockMessages
   const [input, setInput] = useState("")
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+
+  useEffect(() => {
+    const loadedChats = localStorage.getItem(`open3:chats`)
+    if (loadedChats) {
+      const chats = JSON.parse(loadedChats) as ChatType[]
+      const chat = chats.find((chat) => chat.id === id)
+      if (chat) {
+        setMessages(chat.messages as MessageType[] || mockMessages)
+      }
+    }
+  }, [id])
 
   // Auto-scroll to bottom when new messages arrive
   const scrollToBottom = () => {
@@ -111,7 +123,7 @@ export default function Chat() {
       <div className="relative h-full">
         {/* Chat Messages */}
         <div className="h-full">
-          <ScrollArea className="h-full p-6" ref={scrollAreaRef}>
+          <ScrollArea className="h-full p-6" ref={scrollAreaRef} type="hidden">
             <div className="max-w-4xl mx-auto space-y-6">
               {messages.map((message) => (
                 <div key={message.id} className="w-full">
@@ -138,7 +150,7 @@ export default function Chat() {
         </div>
 
         {/* Floating Input */}
-        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 w-full max-w-4xl">
+        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 w-full max-w-4xl px-4 text-sm sm:text-base">
           <div className="relative">
             <textarea
               value={input}
@@ -151,7 +163,7 @@ export default function Chat() {
               }}
               placeholder="Type your message..."
               rows={1}
-              className="w-full bg-white/5 backdrop-blur-md border border-white/10 focus:border-purple-400/50 text-neutral-100 placeholder:text-neutral-400 rounded-xl px-6 py-4 pr-16 resize-none focus:outline-none focus:ring-0 min-h-[56px] max-h-64 overflow-y-auto scrollbar-hide"
+              className="w-full bg-black/15 backdrop-blur-md border border-white/10 focus:border-purple-400/50 text-neutral-100 placeholder:text-neutral-400 rounded-xl px-6 py-4 pr-16 resize-none focus:outline-none focus:ring-0 min-h-[56px] max-h-64 overflow-y-auto scrollbar-hide"
               style={{
                 height: "auto",
                 minHeight: "56px",
