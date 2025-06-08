@@ -3,6 +3,8 @@
 import LayoutWithSidebar from "@/components/LayoutWithSidebar"
 import { Button } from "@/components/ui/button"
 import type { ChatType, MessageType } from "@/lib/types"
+import { api } from "../../convex/_generated/api"
+import { useMutation, useQuery } from "convex/react"
 import { ArrowUp } from "lucide-react"
 import { useRouter } from "next/navigation"
 import React, { useEffect, useRef, useState } from "react"
@@ -15,6 +17,9 @@ const examples: string[] = [
 ]
 
 const HomePage = () => {
+  const tasks = useQuery(api.tasks.get)
+  const toggle = useMutation(api.tasks.toggle)
+
   const [input, setInput] = useState("")
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const [chats, setChats] = useState<ChatType[]>([])
@@ -95,7 +100,17 @@ const HomePage = () => {
             ))}
           </div>
         </div>
+        <div>
+          <h2 className="text-2xl font-bold text-white mb-2">Tasks</h2>
+          {tasks?.map((task) => (
+            <div key={task._id} className="flex gap-4 items-center">
+              <h3 className="text-lg text-white">{task.text}</h3>
+              <input type="checkbox" checked={task.isCompleted} onChange={() => toggle({ id: task._id })} />
+            </div>
+          ))}
+        </div>
       </div>
+
 
       <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 w-full max-w-4xl px-4 text-sm sm:text-base">
           <div className="relative">

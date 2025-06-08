@@ -5,6 +5,9 @@ import { type Metadata } from "next";
 import { Geist } from "next/font/google";
 
 import { TRPCReactProvider } from "@/trpc/react";
+import { ConvexClientProvider } from "./ConvexClientProvider";
+
+import { ClerkProvider } from "@clerk/nextjs";
 
 export const metadata: Metadata = {
   title: "Create T3 App",
@@ -23,7 +26,13 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geist.variable}`}>
       <body>
-        <TRPCReactProvider>{children}</TRPCReactProvider>
+        <TRPCReactProvider>
+          <ConvexClientProvider>
+            <ClerkProvider>
+              {children}
+            </ClerkProvider>
+          </ConvexClientProvider>
+        </TRPCReactProvider>
       </body>
     </html>
   );
