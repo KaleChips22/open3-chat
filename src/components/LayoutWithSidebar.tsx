@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import React, { useState, useEffect } from 'react'
 import { useMutation, useQuery } from 'convex/react'
-import { api } from 'convex/_generated/api'
+import { api } from '../../convex/_generated/api'
 import { SignedIn, SignedOut, SignInButton, UserButton, useUser } from '@clerk/nextjs'
 import { Button } from './ui/button'
 

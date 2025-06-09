@@ -1,8 +1,8 @@
 "use server"
 
 import models from "@/models/models";
-import { api } from "convex/_generated/api";
-import type { Id } from "convex/_generated/dataModel";
+import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
 import { fetchMutation, fetchQuery } from "convex/nextjs";
 import { revalidatePath } from "next/cache";
 import { generateNextCompletion } from "@/models/index";
