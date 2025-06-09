@@ -1,10 +1,9 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
-import { ArrowUp } from "lucide-react"
+import { ArrowUp, Bot, User } from "lucide-react"
 import { ScrollArea } from "@/components/scroll-area"
 import type { ChatType, MessageType } from "@/lib/types"
 
@@ -24,7 +23,7 @@ const mockMessages: MessageType[] = [
     id: "3",
     role: "assistant" as const,
     content:
-      "Absolutely! Machine learning is a subset of artificial intelligence that enables computers to learn and make decisions from data without being explicitly programmed for every scenario. It's like teaching a computer to recognize patterns and make predictions based on examples.\n\nThere are three main types:\n• Supervised learning (learning from labeled examples)\n• Unsupervised learning (finding patterns in unlabeled data)\n• Reinforcement learning (learning through trial and error)\n\nWould you like me to dive deeper into any of these areas?",
+      "Absolutely! Machine learning is a subset of artificial intelligence that enables computers to learn and make decisions from data without being explicitly programmed for every scenario. It's like teaching a computer to recognize patterns and make predictions based on examples.\n\nThere are three main types:\n• **Supervised learning** (learning from labeled examples)\n• **Unsupervised learning** (finding patterns in unlabeled data)\n• **Reinforcement learning** (learning through trial and error)\n\nWould you like me to dive deeper into any of these areas?",
   },
   {
     id: "4",
@@ -40,7 +39,7 @@ const mockMessages: MessageType[] = [
 ]
 
 export default function Chat({ id }: { id: string }) {
-  const [messages, setMessages] = useState<MessageType[]>([]) // mockMessages
+  const [messages, setMessages] = useState<MessageType[]>([])
   const [input, setInput] = useState("")
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -76,7 +75,7 @@ export default function Chat({ id }: { id: string }) {
   const minimizeInput = () => {
     if (inputRef.current) {
       inputRef.current.style.height = "auto"
-      inputRef.current.style.height = "56px"
+      inputRef.current.style.height = "64px"
     }
   }
 
@@ -117,40 +116,65 @@ export default function Chat({ id }: { id: string }) {
     }, 1000)
   }
 
+  const renderMessage = (content: string) => {
+    return (
+      <div 
+        className="markdown-content prose prose-invert max-w-none"
+        dangerouslySetInnerHTML={{
+          __html: content
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/\n/g, '<br>')
+        }}
+      />
+    )
+  }
+
   return (
-    <div className="h-screen bg-neutral-950 text-neutral-100">
+    <div className="h-screen bg-gradient-to-br from-slate-950 via-purple-950/10 to-slate-950">
       {/* Chat Container */}
       <div className="relative h-full">
         {/* Chat Messages */}
         <div className="h-full">
           <ScrollArea className="h-full p-6" ref={scrollAreaRef} type="hidden">
-            <div className="max-w-4xl mx-auto space-y-6">
+            <div className="max-w-4xl mx-auto space-y-8 pb-32">
               {messages.map((message) => (
                 <div key={message.id} className="w-full">
                   {message.role === "user" ? (
-                    // User message with bubble
-                    <div className="flex justify-end">
-                      <div className="max-w-[80%] bg-neutral-800 border border-neutral-700 text-neutral-100 rounded-2xl px-4 py-3">
-                        <div className="whitespace-pre-wrap break-words text-sm leading-relaxed">{message.content}</div>
+                    // User message
+                    <div className="flex justify-end mb-6">
+                      <div className="flex items-start gap-4 max-w-[80%]">
+                        <div className="glass rounded-2xl px-6 py-4 border border-purple-500/20">
+                          <div className="text-slate-100 leading-relaxed">
+                            {message.content}
+                          </div>
+                        </div>
+                        <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center glow-subtle">
+                          <User className="size-5 text-white" />
+                        </div>
                       </div>
                     </div>
                   ) : (
-                    // AI message directly on background
-                    <div className="w-full">
-                      <div className="whitespace-pre-wrap break-words text-sm leading-relaxed text-neutral-100">
-                        {message.content}
+                    // AI message
+                    <div className="flex justify-start mb-6">
+                      <div className="flex items-start gap-4 max-w-[85%]">
+                        <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center border border-purple-500/20">
+                          <Bot className="size-5 text-purple-400" />
+                        </div>
+                        <div className="glass-subtle rounded-2xl px-6 py-4 border border-purple-500/10">
+                          {renderMessage(message.content)}
+                        </div>
                       </div>
                     </div>
                   )}
                 </div>
               ))}
-              <div className="h-15 w-full bg-transparent" />
             </div>
           </ScrollArea>
         </div>
 
         {/* Floating Input */}
-        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 w-full max-w-4xl px-4 text-sm sm:text-base">
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 w-full max-w-4xl px-6">
           <div className="relative">
             <textarea
               value={input}
@@ -163,10 +187,10 @@ export default function Chat({ id }: { id: string }) {
               }}
               placeholder="Type your message..."
               rows={1}
-              className="w-full bg-black/15 backdrop-blur-md border border-white/10 focus:border-purple-400/50 text-neutral-100 placeholder:text-neutral-400 rounded-xl px-6 py-4 pr-16 resize-none focus:outline-none focus:ring-0 min-h-[56px] max-h-64 overflow-y-auto scrollbar-hide"
+              className="w-full glass text-slate-100 placeholder:text-slate-400 rounded-2xl px-6 py-4 pr-16 resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/50 min-h-[64px] max-h-64 overflow-y-auto scrollbar-hide glow-subtle focus:glow transition-all duration-200"
               style={{
                 height: "auto",
-                minHeight: "56px",
+                minHeight: "64px",
               }}
               ref={inputRef}
               onInput={resizeInput}
@@ -175,9 +199,9 @@ export default function Chat({ id }: { id: string }) {
               type="submit"
               onClick={handleSubmit}
               disabled={!input.trim()}
-              className="absolute right-3 bottom-3 bg-purple-500/20 backdrop-blur-md border border-purple-400/30 hover:bg-purple-500/30 text-neutral-100 disabled:opacity-50 rounded-lg size-9 p-0 flex items-center justify-center cursor-pointer"
+              className="absolute right-3 bottom-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white disabled:opacity-50 disabled:cursor-not-allowed rounded-xl size-10 p-0 flex items-center justify-center cursor-pointer transition-all duration-200 glow-subtle hover:glow border-0"
             >
-              <ArrowUp className="size-4" />
+              <ArrowUp className="size-5" />
             </Button>
           </div>
         </div>
