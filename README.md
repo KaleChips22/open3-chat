@@ -27,6 +27,7 @@ An open source LLM chat application built for [Theo's T3 Chat Cloneathon](https:
 - [X] Use streams to generate data live
 
 ### Other Features
+- [ ] Thinking Detials
 - [ ] Syntax Highlighting
 - [ ] Guest Chatting
 - [ ] BYOK
@@ -71,6 +72,10 @@ An open source LLM chat application built for [Theo's T3 Chat Cloneathon](https:
 - [X] AI responses should go directly to the sync enginge (convex)
 
 ## Doing Next
+- [ ] Manage State in Stream
+  - [ ] Lock input until stream is done
+  - [ ] Distinguish between thinking and normal responses
+  - [ ] Web integration (?)
 - [ ] Syntax Highlighting
 - [ ] Settings Page
   - [ ] Themes
