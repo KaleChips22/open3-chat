@@ -11,8 +11,9 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
 
 export const metadata: Metadata = {
-  title: "Open3 Chat - AI Conversations",
-  description: "Experience the future of AI conversation with Open3 Chat",
+  title: "Open3 Chat",
+  description: "An open source LLM chat application built for Theo's T3 Chat Cloneathon",
+  authors: [{ name: "Kale", url: "https://github.com/KaleChips22" }],
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 

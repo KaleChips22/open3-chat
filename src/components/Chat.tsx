@@ -5,55 +5,43 @@ import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { ArrowUp, Bot, User } from "lucide-react"
 import { ScrollArea } from "@/components/scroll-area"
-import type { ChatType, MessageType } from "@/lib/types"
+import { useMutation, useQuery } from "convex/react"
+import { api } from "convex/_generated/api"
+import type { Id } from "convex/_generated/dataModel"
+import { useRouter } from "next/navigation"
+import { useUser } from "@clerk/nextjs"
+import { pushUserMessage } from "@/actions/pushUserMessage"
+import Markdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 
-// Mock data for demonstration
-const mockMessages: MessageType[] = [
-  {
-    id: "1",
-    role: "assistant" as const,
-    content: "Hello! I'm your AI assistant. How can I help you today?",
-  },
-  {
-    id: "2",
-    role: "user" as const,
-    content: "Can you help me understand machine learning?",
-  },
-  {
-    id: "3",
-    role: "assistant" as const,
-    content:
-      "Absolutely! Machine learning is a subset of artificial intelligence that enables computers to learn and make decisions from data without being explicitly programmed for every scenario. It's like teaching a computer to recognize patterns and make predictions based on examples.\n\nThere are three main types:\n• **Supervised learning** (learning from labeled examples)\n• **Unsupervised learning** (finding patterns in unlabeled data)\n• **Reinforcement learning** (learning through trial and error)\n\nWould you like me to dive deeper into any of these areas?",
-  },
-  {
-    id: "4",
-    role: "user" as const,
-    content: "That's really helpful! Can you give me a simple example of supervised learning?",
-  },
-  {
-    id: "5",
-    role: "assistant" as const,
-    content:
-      "Great question! Here's a simple example:\n\nImagine you want to teach a computer to recognize whether an email is spam or not spam. You would:\n\n1. **Collect training data**: Gather thousands of emails that are already labeled as 'spam' or 'not spam'\n\n2. **Extract features**: The computer looks at features like:\n   • Certain words (\"FREE!\", \"URGENT!\")\n   • Sender information\n   • Subject line patterns\n   • Number of exclamation marks\n\n3. **Train the model**: The algorithm learns patterns from these labeled examples\n\n4. **Make predictions**: When a new email arrives, the model uses what it learned to predict if it's spam or not\n\nThe key is that we're giving the computer examples with the \"right answers\" (labels) so it can learn to make similar decisions on new, unseen data!",
-  },
-]
+import '@/styles/markdown.css'
 
 export default function Chat({ id }: { id: string }) {
-  const [messages, setMessages] = useState<MessageType[]>([])
+  const router = useRouter()
+
+  const { user, isLoaded } = useUser()
+
+  const chat = useQuery(api.chats.getChat, { id: id as Id<"chats"> })
+  
+  const createMessage = useMutation(api.messages.createMessage)
+
+  // const [messages, setMessages] = useState<any[]>([]) // mockMessage
+  
+  const messages = useQuery(api.messages.getMessagesForChat, { chatId: id as Id<"chats"> })
   const [input, setInput] = useState("")
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
-    const loadedChats = localStorage.getItem(`open3:chats`)
-    if (loadedChats) {
-      const chats = JSON.parse(loadedChats) as ChatType[]
-      const chat = chats.find((chat) => chat.id === id)
-      if (chat) {
-        setMessages(chat.messages as MessageType[] || mockMessages)
-      }
-    }
-  }, [id])
+    if (!chat) return
+    
+    document.title = `${chat.title} - Open3 Chat`
+  }, [chat])
+
+  useEffect(() => {
+    if (!isLoaded) return
+    if (!user || chat && chat.clerkId !== user.id) return router.push("/")
+  }, [user, isLoaded, chat])
 
   // Auto-scroll to bottom when new messages arrive
   const scrollToBottom = () => {
@@ -87,33 +75,14 @@ export default function Chat({ id }: { id: string }) {
     scrollToBottom()
   }, [])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
     if (!input.trim()) return
 
-    // Add user message
-    const userMessage = {
-      id: Date.now().toString(),
-      role: "user" as const,
-      content: input,
-    }
+    pushUserMessage(id as Id<"chats">, input)
 
-    setMessages((prev) => [...prev, userMessage])
     setInput("")
-
     minimizeInput()
-
-    // Simulate AI response after a delay
-    setTimeout(() => {
-      const aiResponse = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant" as const,
-        content:
-          "Thanks for your message! This is a mock response. In a real implementation, this would be powered by an AI model.",
-      }
-      setMessages((prev) => [...prev, aiResponse])
-    }, 1000)
   }
 
   const renderMessage = (content: string) => {
@@ -138,8 +107,8 @@ export default function Chat({ id }: { id: string }) {
         <div className="h-full">
           <ScrollArea className="h-full p-6" ref={scrollAreaRef} type="hidden">
             <div className="max-w-4xl mx-auto space-y-8 pb-32">
-              {messages.map((message) => (
-                <div key={message.id} className="w-full">
+              {messages && messages.map((message) => (
+                <div key={message._id} className="w-full">
                   {message.role === "user" ? (
                     // User message
                     <div className="flex justify-end mb-6">
@@ -155,15 +124,21 @@ export default function Chat({ id }: { id: string }) {
                       </div>
                     </div>
                   ) : (
-                    // AI message
-                    <div className="flex justify-start mb-6">
-                      <div className="flex items-start gap-4 max-w-[85%]">
-                        <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center border border-purple-500/20">
-                          <Bot className="size-5 text-purple-400" />
-                        </div>
-                        <div className="glass-subtle rounded-2xl px-6 py-4 border border-purple-500/10">
-                          {renderMessage(message.content)}
-                        </div>
+                    // AI message directly on background
+                    <div className="w-full">
+                        <div className="whitespace-pre-wrap break-words text-sm leading-relaxed text-neutral-100 max-w-[100%] md:max-w-[80%] markdown">
+                          <Markdown
+                            components={{
+                            code: ({ node, ...props }) => <code className="inline" {...props} />,
+                            pre: ({ node, ...props }) => {
+                              // @ts-ignore
+                              const language = node.children[0]?.properties.className[0].replace("language-", "") || "text"
+                              return <pre {...props} data-language={language} />
+                              }
+                            }}
+                            remarkPlugins={[remarkGfm]}
+                          >{message.content}</Markdown>
+                        {/* {message.content} */}
                       </div>
                     </div>
                   )}

@@ -1,25 +1,29 @@
 'use client'
 
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
-import { ChevronDownIcon, LogInIcon, LogOutIcon, MessageCircleIcon, PlusIcon, SparklesIcon, UserIcon } from 'lucide-react'
+import { LogInIcon, MessageCircleIcon, PlusIcon, SparklesIcon, TrashIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import React from 'react'
 import { useMutation, useQuery } from 'convex/react'
 import { api } from 'convex/_generated/api'
-import { SignedIn, SignedOut, SignInButton, useClerk, UserButton, useUser } from '@clerk/nextjs'
-import { DropdownMenu } from './ui/dropdown-menu'
+import { SignedIn, SignedOut, SignInButton, UserButton, useUser } from '@clerk/nextjs'
+import { Button } from './ui/button'
 
 const LayoutWithSidebar = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter()
   const { user } = useUser()
-  const { signOut } = useClerk()
 
-  const chats = useQuery(api.chats.getAllChats)
+  const chats = useQuery(api.chats.getMyChats, { clerkId: user?.id || "" })
   const newChat = useMutation(api.chats.createChat)
+  const deleteChat = useMutation(api.chats.deleteChat)
 
   const makeNewChat = async () => {
-    const newId = await newChat()
+    if (!user) {
+      return
+    }
+
+    const newId = await newChat({ clerkId: user.id })
     router.push(`/chat/${newId}`)
   }
 
@@ -40,10 +44,20 @@ const LayoutWithSidebar = ({ children }: { children: React.ReactNode }) => {
               <SidebarGroupLabel className='text-purple-300 text-sm font-semibold uppercase tracking-wider mb-3'>My Conversations</SidebarGroupLabel>
               <SidebarGroupContent className='flex flex-col gap-2'>
                 {chats && chats.length > 0 ? chats.map((chat) => (
-                  <SidebarMenuItem key={chat._id} className='flex flex-row items-center gap-2' onClick={() => router.push(`/chat/${chat._id}`)}>
-                    <SidebarMenuButton className='flex flex-row items-center gap-3 glass-subtle hover:glass text-slate-200 hover:text-white rounded-xl p-3 w-full cursor-pointer transition-all duration-200 group'>
-                      <MessageCircleIcon className='size-4 text-purple-400 group-hover:text-purple-300' />
-                      <span className='truncate'>{chat.title}</span>
+                  <SidebarMenuItem key={chat._id} className='flex flex-row items-center gap-2 group' onClick={() => router.push(`/chat/${chat._id}`)}>
+                    <SidebarMenuButton className='flex flex-row items-center justify-between bg-transparent hover:bg-neutral-800 text-white hover:text-white rounded-md p-2 py-5 ml-2 w-full cursor-pointer transition-all group/chat-title'>
+                      <div className='flex flex-row items-center gap-1 h-full'>
+                        <MessageCircleIcon className='size-5' />
+                        <span>{chat.title}</span>
+                      </div>
+                      <div className='flex flex-row items-center gap-1 h-full'>
+                        <div
+                          className='flex items-center justify-center cursor-pointer hover:text-red-500 group-hover/chat-title:opacity-100 opacity-0 transition-all p-2'
+                          onClick={() => deleteChat({ id: chat._id })}
+                        >
+                          <TrashIcon className='size-5' />
+                        </div>
+                      </div>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )) : (
@@ -52,10 +66,10 @@ const LayoutWithSidebar = ({ children }: { children: React.ReactNode }) => {
                   </SidebarMenuItem>
                 )}
 
-                <SidebarMenuItem className='flex flex-row items-center gap-2 mt-4' onClick={makeNewChat}>
-                  <SidebarMenuButton className='flex flex-row items-center gap-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white rounded-xl p-3 w-full cursor-pointer transition-all duration-200 glow-subtle hover:glow group'>
-                    <PlusIcon className='size-4' />
-                    <span className='font-medium'>New Conversation</span>
+                <SidebarMenuItem className='flex flex-row items-center gap-2' onClick={makeNewChat}>
+                  <SidebarMenuButton className='flex flex-row items-center gap-2 bg-transparent hover:bg-neutral-800 text-white hover:text-white rounded-md p-2 py-5 ml-2 w-full cursor-pointer transition-all'>
+                    <PlusIcon className='size-5' />
+                    <span>New Chat</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarGroupContent>

@@ -1,8 +1,11 @@
 "use client"
 
+import { pushUserMessage } from "@/actions/pushUserMessage"
 import LayoutWithSidebar from "@/components/LayoutWithSidebar"
 import { Button } from "@/components/ui/button"
-import type { ChatType, MessageType } from "@/lib/types"
+import { useUser } from "@clerk/nextjs"
+import { api } from "convex/_generated/api"
+import { useMutation, useQuery } from "convex/react"
 import { ArrowUp, Sparkles, Zap, Brain, MessageSquare } from "lucide-react"
 import { useRouter } from "next/navigation"
 import React, { useEffect, useRef, useState } from "react"
@@ -15,23 +18,16 @@ const examples: string[] = [
 ]
 
 const HomePage = () => {
+  const { user } = useUser()
+
   const [input, setInput] = useState("")
   const inputRef = useRef<HTMLTextAreaElement>(null)
-  const [chats, setChats] = useState<ChatType[]>([])
   const router = useRouter()
 
-  useEffect(() => {
-    const loadedChats = localStorage.getItem('open3:chats')
-    if (loadedChats) {
-      setChats(JSON.parse(loadedChats) as ChatType[])
-    } else {
-      localStorage.setItem('open3:chats', JSON.stringify([]))
-    }
-  }, [])
-
-  useEffect(() => {
-    localStorage.setItem('open3:chats', JSON.stringify(chats))
-  }, [chats])
+  const chats = useQuery(api.chats.getMyChats, {
+    clerkId: user?.id ?? ""
+  })
+  const createChat = useMutation(api.chats.createChat)
 
   const resizeInput = () => {
     if (inputRef.current) {
@@ -47,23 +43,17 @@ const HomePage = () => {
     makeNewChat(input)
   }
 
-  const makeNewChat = (firstMessage: string = "") => {
-    const newId = Math.random().toString(36).substring(2, 15)
-    const newMessage: MessageType = {
-      id: Math.random().toString(36).substring(2, 15),
-      content: firstMessage,
-      role: 'user'
+  const makeNewChat = async (firstMessage: string = "") => {
+    if (!user?.id) return
+
+    const newChat = await createChat({ clerkId: user?.id ?? "" })
+    if (firstMessage.trim() !== "") {
+      pushUserMessage(newChat, firstMessage)
     }
 
-    const newChat: ChatType = {
-      id: newId,
-      name: 'New Chat',
-      messages: firstMessage.trim() !== "" ? [newMessage] : []
-    }
-    setChats(current => [...current, newChat])
+    router.push(`/chat/${newChat}`)
 
-    localStorage.setItem('open3:chats', JSON.stringify([...chats, newChat]))
-    router.push(`/chat/${newId}`)
+
   }
 
   return (
@@ -81,7 +71,7 @@ const HomePage = () => {
           </div>
           
           <p className="text-xl text-slate-300 max-w-2xl leading-relaxed">
-            Experience the future of AI conversation. Built for{" "}
+            Welcome{user && `, ${user.firstName},`} to the future of AI conversation. Built for{" "}
             <a 
               href="https://cloneathon.t3.chat/" 
               target="_blank" 
