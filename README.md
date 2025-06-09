@@ -16,16 +16,17 @@ An open source LLM chat application built for [Theo's T3 Chat Cloneathon](https:
 - [ ] Add user preferences (?)
 
 ### Requirements
-- [?] Chat with Various LLMs
+- [ ] Chat with Various LLMs
 - [X] Authentication & Sync
 - [X] Browser Friendly
-- [?] Easy to Try
+- [ ] Easy to Try
 
 ### Actual AI Stuff / Required Features
 - [X] Add first model
 - [X] Use the same functinality to call *all* models
 - [X] AI responses should go directly to the sync enginge (convex)
 - [ ] Let users select a model
+- [ ] Use streams to generate data live
 
 ### Other Features
 - To be decided
@@ -42,4 +43,4 @@ An open source LLM chat application built for [Theo's T3 Chat Cloneathon](https:
 - [X] Create Chat
 - [X] View a chat page (/chat/:id)
 
-### **Last Updated: 06/08/2025, 6:45 PM**
+### **Last Updated: 06/08/2025, 11:49 PM**
