@@ -28,18 +28,20 @@ const LayoutWithSidebar = ({ children }: { children: React.ReactNode }) => {
   }
 
   return (
-    <div className='flex flex-col h-screen'>
+    <div className='flex flex-col h-screen bg-gradient-to-br from-slate-950 via-purple-950/20 to-slate-950'>
       <SidebarProvider defaultOpen={true}>
-        <Sidebar className='bg-neutral-950 border-r border-neutral-700 h-full'>
-          <SidebarHeader className='bg-neutral-950 border-b border-neutral-700 text-white text-lg p-4 flex gap-2 flex-row items-center'>
-            <Link href="/" className='flex flex-row items-center gap-2'>
-              <SparklesIcon className='size-5 font-bold' />
-              <h1 className='text-lg font-semibold'>Open3 Chat</h1>
+        <Sidebar className='bg-slate-950/80 backdrop-blur-xl border-r border-purple-500/20 h-full'>
+          <SidebarHeader className='bg-gradient-to-r from-purple-900/20 to-purple-800/20 border-b border-purple-500/20 text-white text-lg p-6 flex gap-3 flex-row items-center'>
+            <Link href="/" className='flex flex-row items-center gap-3'>
+              <div className='p-2 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 glow-subtle'>
+                <SparklesIcon className='size-5 font-bold text-white' />
+              </div>
+              <h1 className='text-xl font-bold gradient-text'>Open3 Chat</h1>
             </Link>
           </SidebarHeader>
-          <SidebarContent className='bg-neutral-950'>
-            <SidebarGroup className='flex flex-col mt-4 gap-1'>
-              <SidebarGroupLabel className='text-white text-lg font-semibold'>My Chats</SidebarGroupLabel>
+          <SidebarContent className='bg-slate-950/50 backdrop-blur-sm'>
+            <SidebarGroup className='flex flex-col mt-6 gap-2 px-4'>
+              <SidebarGroupLabel className='text-purple-300 text-sm font-semibold uppercase tracking-wider mb-3'>My Conversations</SidebarGroupLabel>
               <SidebarGroupContent className='flex flex-col gap-2'>
                 {chats && chats.length > 0 ? chats.map((chat) => (
                   <SidebarMenuItem key={chat._id} className='flex flex-row items-center gap-2 group' onClick={() => router.push(`/chat/${chat._id}`)}>
@@ -60,7 +62,7 @@ const LayoutWithSidebar = ({ children }: { children: React.ReactNode }) => {
                   </SidebarMenuItem>
                 )) : (
                   <SidebarMenuItem className='flex flex-row items-center gap-2'>
-                      <span className='ml-2 mt-1 text-white text-md'>No chats found</span>
+                      <span className='ml-3 mt-2 text-slate-400 text-sm'>No conversations yet</span>
                   </SidebarMenuItem>
                 )}
 
@@ -73,39 +75,41 @@ const LayoutWithSidebar = ({ children }: { children: React.ReactNode }) => {
               </SidebarGroupContent>
             </SidebarGroup>
           </SidebarContent>
-          <SidebarFooter className='flex flex-row items-center justify-between bg-neutral-950 border-t border-neutral-700 text-white p-4'>
+          <SidebarFooter className='flex flex-row items-center justify-between bg-slate-950/80 backdrop-blur-sm border-t border-purple-500/20 text-white p-4'>
             <SignedOut>
               <SignInButton mode='modal'>
-                <div className='flex flex-row items-center gap-2 justify-center cursor-pointer w-full'>
-                  <LogInIcon className='size-4' />
-                  <span>Sign In</span>
+                <div className='flex flex-row items-center gap-3 justify-center cursor-pointer w-full glass-subtle hover:glass rounded-xl p-3 transition-all duration-200'>
+                  <LogInIcon className='size-4 text-purple-400' />
+                  <span className='font-medium'>Sign In</span>
                 </div>
               </SignInButton>
             </SignedOut>
             <SignedIn>
-              {/* <Link href="/profile" className='flex items-center gap-2 justify-center cursor-pointer w-full'> */}
-              <div className='flex flex-row items-center gap-2 justify-center cursor-pointer w-full relative overflow-hidden'>
+              <div className='flex flex-row items-center gap-3 justify-center cursor-pointer w-full glass-subtle rounded-xl p-2 transition-all duration-200'>
                 <UserButton showName={true} appearance={{
                   variables: {
-                    fontSize: '1rem',
+                    fontSize: '0.875rem',
                     fontWeight: {
-                      medium: 300,
+                      medium: 500,
                     }
                   },
                   elements: {
                     userButtonBox: {
-                      padding: '0 2rem',
+                      padding: '0.5rem',
+                    },
+                    userButtonAvatarBox: {
+                      width: '2rem',
+                      height: '2rem',
                     }
                   }
                 }} />
               </div>
-              {/* </Link> */}
             </SignedIn>
           </SidebarFooter>
         </Sidebar>
-        <div className='flex flex-row flex-1 relative bg-neutral-950'>
-          <SidebarTrigger className='size-10 bg-transparent text-white cursor-pointer p-4 m-2 hover:bg-transparent hover:text-white z-1' />
-          <div className="flex-1 -ml-14 p-4 overflow-hidden">
+        <div className='flex flex-row flex-1 relative bg-gradient-to-br from-slate-950 via-purple-950/10 to-slate-950'>
+          <SidebarTrigger className='size-10 bg-glass-subtle hover:glass text-purple-300 hover:text-white cursor-pointer p-2 m-4 rounded-xl transition-all duration-200 z-10 glow-subtle' />
+          <div className="flex-1 -ml-14 overflow-hidden">
             { children }
           </div>
         </div>
