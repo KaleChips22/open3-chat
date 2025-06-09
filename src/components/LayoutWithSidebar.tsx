@@ -1,53 +1,29 @@
 'use client'
 
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
-import { ChevronDownIcon, LogInIcon, LogOutIcon, MessageCircleIcon, PlusIcon, SparklesIcon, UserIcon } from 'lucide-react'
+import { LogInIcon, MessageCircleIcon, PlusIcon, SparklesIcon, TrashIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import React from 'react'
 import { useMutation, useQuery } from 'convex/react'
 import { api } from 'convex/_generated/api'
-import { SignedIn, SignedOut, SignInButton, useClerk, UserButton, useUser } from '@clerk/nextjs'
-import { DropdownMenu } from './ui/dropdown-menu'
-
-// const chats = [
-//   {
-//     id: '1',
-//     name: 'Chat 1',
-//     messages: []
-//   }
-// ]
+import { SignedIn, SignedOut, SignInButton, UserButton, useUser } from '@clerk/nextjs'
+import { Button } from './ui/button'
 
 const LayoutWithSidebar = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter()
   const { user } = useUser()
-  const { signOut } = useClerk()
 
-  // const [chats, setChats] = useState<ChatType[]>([])
-  const chats = useQuery(api.chats.getAllChats)
+  const chats = useQuery(api.chats.getMyChats, { clerkId: user?.id || "" })
   const newChat = useMutation(api.chats.createChat)
-
-  // useEffect(() => {
-  //   const loadedChats = localStorage.getItem('open3:chats')
-  //   if (loadedChats) {
-  //     setChats(JSON.parse(loadedChats) as ChatType[])
-  //   } else {
-  //     localStorage.setItem('open3:chats', JSON.stringify([]))
-  //   }
-  // }, [])
+  const deleteChat = useMutation(api.chats.deleteChat)
 
   const makeNewChat = async () => {
-    // const newId = Math.random().toString(36).substring(2, 15)
-    // const newChat: ChatType = {
-    //   id: newId,
-    //   name: 'New Chat',
-    //   messages: []
-    // }
-    // setChats(current => [...current, newChat])
+    if (!user) {
+      return
+    }
 
-    // localStorage.setItem('open3:chats', JSON.stringify([...chats, newChat]))
-
-    const newId = await newChat()
+    const newId = await newChat({ clerkId: user.id })
     router.push(`/chat/${newId}`)
   }
 
@@ -66,10 +42,20 @@ const LayoutWithSidebar = ({ children }: { children: React.ReactNode }) => {
               <SidebarGroupLabel className='text-white text-lg font-semibold'>My Chats</SidebarGroupLabel>
               <SidebarGroupContent className='flex flex-col gap-2'>
                 {chats && chats.length > 0 ? chats.map((chat) => (
-                  <SidebarMenuItem key={chat._id} className='flex flex-row items-center gap-2' onClick={() => router.push(`/chat/${chat._id}`)}>
-                    <SidebarMenuButton className='flex flex-row items-center gap-2 bg-transparent hover:bg-neutral-800 text-white hover:text-white rounded-md p-2 w-full cursor-pointer transition-all'>
-                      <MessageCircleIcon className='size-5' />
-                      <span>{chat.title}</span>
+                  <SidebarMenuItem key={chat._id} className='flex flex-row items-center gap-2 group' onClick={() => router.push(`/chat/${chat._id}`)}>
+                    <SidebarMenuButton className='flex flex-row items-center justify-between bg-transparent hover:bg-neutral-800 text-white hover:text-white rounded-md p-2 py-5 ml-2 w-full cursor-pointer transition-all group/chat-title'>
+                      <div className='flex flex-row items-center gap-1 h-full'>
+                        <MessageCircleIcon className='size-5' />
+                        <span>{chat.title}</span>
+                      </div>
+                      <div className='flex flex-row items-center gap-1 h-full'>
+                        <div
+                          className='flex items-center justify-center cursor-pointer hover:text-red-500 group-hover/chat-title:opacity-100 opacity-0 transition-all p-2'
+                          onClick={() => deleteChat({ id: chat._id })}
+                        >
+                          <TrashIcon className='size-5' />
+                        </div>
+                      </div>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )) : (
@@ -79,7 +65,7 @@ const LayoutWithSidebar = ({ children }: { children: React.ReactNode }) => {
                 )}
 
                 <SidebarMenuItem className='flex flex-row items-center gap-2' onClick={makeNewChat}>
-                  <SidebarMenuButton className='flex flex-row items-center gap-2 bg-transparent hover:bg-neutral-800 text-white hover:text-white rounded-md p-2 w-full cursor-pointer transition-all'>
+                  <SidebarMenuButton className='flex flex-row items-center gap-2 bg-transparent hover:bg-neutral-800 text-white hover:text-white rounded-md p-2 py-5 ml-2 w-full cursor-pointer transition-all'>
                     <PlusIcon className='size-5' />
                     <span>New Chat</span>
                   </SidebarMenuButton>

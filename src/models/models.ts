@@ -1,0 +1,14 @@
+const models = [
+  {
+    name: "openai/gpt-4o",
+    description: "The latest model from OpenAI",
+    icon: ""
+  },
+  {
+    name: "openai/gpt-4o-mini",
+    description: "The mini model from OpenAI",
+    icon: ""
+  },
+]
+
+export default models

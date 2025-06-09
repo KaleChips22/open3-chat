@@ -9,17 +9,23 @@ An open source LLM chat application built for [Theo's T3 Chat Cloneathon](https:
 
 ## Todo
 
-- [ ] Add clerk user id to chats, messages, users
-- [ ] Add messages table to Convex
-- [ ] Add users table to convex
-- [ ] Protect chats by auth
+- [X] Add clerk user id to chats, messages
+- [X] Add messages table to Convex
+- [X] Users can only see chats in the sidebar with their clerkId
+- [X] Protect chats by auth
 - [ ] Add user preferences (?)
 
+### Requirements
+- [?] Chat with Various LLMs
+- [X] Authentication & Sync
+- [X] Browser Friendly
+- [?] Easy to Try
+
 ### Actual AI Stuff / Required Features
-- [ ] Add first model
-- [ ] Use the same functinality to call *all* models
+- [X] Add first model
+- [X] Use the same functinality to call *all* models
+- [X] AI responses should go directly to the sync enginge (convex)
 - [ ] Let users select a model
-- [ ] AI responses should go directly to the sync enginge ()
 
 ### Other Features
 - To be decided
@@ -36,4 +42,4 @@ An open source LLM chat application built for [Theo's T3 Chat Cloneathon](https:
 - [X] Create Chat
 - [X] View a chat page (/chat/:id)
 
-### **Last Updated: 06/08/2025, 6:02 PM**
+### **Last Updated: 06/08/2025, 6:45 PM**
