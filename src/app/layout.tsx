@@ -25,7 +25,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${geist.variable} dark`}>
+    <html lang="en\" className={`${geist.variable} dark`}>
       <body className="dark">
         <TRPCReactProvider>
           <ConvexClientProvider>
