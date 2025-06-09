@@ -72,6 +72,8 @@ An open source LLM chat application built for [Theo's T3 Chat Cloneathon](https:
 - [X] AI responses should go directly to the sync enginge (convex)
 
 ## Doing Next
+- [ ] Render markdown properly during stream input
+  - Maybe change md parse providers
 - [ ] Manage State in Stream
   - [ ] Lock input until stream is done
   - [ ] Distinguish between thinking and normal responses
@@ -81,4 +83,4 @@ An open source LLM chat application built for [Theo's T3 Chat Cloneathon](https:
   - [ ] Themes
   - [ ] Light/Dark
 
-### **Last Updated: 06/09/2025,  02:02 AM**
+### **Last Updated: 06/09/2025,  08:27 AM**
