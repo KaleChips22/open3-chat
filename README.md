@@ -9,27 +9,47 @@ An open source LLM chat application built for [Theo's T3 Chat Cloneathon](https:
 
 ## Todo
 
-- [X] Add clerk user id to chats, messages
-- [X] Add messages table to Convex
-- [X] Users can only see chats in the sidebar with their clerkId
-- [X] Protect chats by auth
-- [ ] Add user preferences (?)
+- [ ] Model selection
+- [ ] Have multiple models
+- [ ] BYOK w/ Most major carriers (OpenAI, Anthropic, etc.) as well as OpenRouter
+- [ ] Guest Chatting
+- [ ] Syntax Highlighting
 
 ### Requirements
 - [ ] Chat with Various LLMs
 - [X] Authentication & Sync
 - [X] Browser Friendly
-- [ ] Easy to Try
+- [X] Easy to Try
+  - [ ] Guest Chatting
 
 ### Actual AI Stuff / Required Features
-- [X] Add first model
-- [X] Use the same functinality to call *all* models
-- [X] AI responses should go directly to the sync enginge (convex)
 - [ ] Let users select a model
-- [ ] Use streams to generate data live
+- [X] Use streams to generate data live
 
 ### Other Features
-- To be decided
+- [ ] Syntax Highlighting
+- [ ] Guest Chatting
+- [ ] BYOK
+- [ ] Resumable streams
+- [ ] Settings Page
+
+#### Serious Settings
+- [ ] Switch Themes
+  - Purple (default)
+  - Red
+  - Pink
+  - Blue
+  - Green
+- [ ] Light/Dark Toggle
+- [ ] BYOK inputs
+- [ ] Code theme (?)
+
+#### Fun dumb shit
+- [ ] Silly system prompts
+  - you are stupid
+  - answer only in brainrot
+  - etc...
+- [ ] Some other dumb shit :)
 
 ## Done
 - [X] Main UI
@@ -42,5 +62,18 @@ An open source LLM chat application built for [Theo's T3 Chat Cloneathon](https:
 - [X] Show chats in sidebar
 - [X] Create Chat
 - [X] View a chat page (/chat/:id)
+- [X] Add clerk user id to chats, messages
+- [X] Add messages table to Convex
+- [X] Users can only see chats in the sidebar with their clerkId
+- [X] Protect chats by auth
+- [X] Add first model
+- [X] Use the same functinality to call *all* models
+- [X] AI responses should go directly to the sync enginge (convex)
 
-### **Last Updated: 06/08/2025, 11:49 PM**
+## Doing Next
+- [ ] Syntax Highlighting
+- [ ] Settings Page
+  - [ ] Themes
+  - [ ] Light/Dark
+
+### **Last Updated: 06/09/2025,  02:02 AM**
