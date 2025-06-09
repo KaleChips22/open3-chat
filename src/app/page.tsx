@@ -1,6 +1,7 @@
 "use client"
 
 import { pushUserMessage } from "@/actions/pushUserMessage"
+import BackgroundEffects from "@/components/BackgroundEffects"
 import LayoutWithSidebar from "@/components/LayoutWithSidebar"
 import { Button } from "@/components/ui/button"
 import { useUser } from "@clerk/nextjs"
@@ -57,11 +58,7 @@ const HomePage = () => {
   return (
     <LayoutWithSidebar>
       {/* Background Effects */}
-      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-accent/5 blur-3xl animate-float" style={{ animationDelay: "0s" }}></div>
-        <div className="absolute bottom-1/3 right-1/4 w-80 h-80 rounded-full bg-accent/5 blur-3xl animate-float" style={{ animationDelay: "1s" }}></div>
-        <div className="absolute top-2/3 left-1/2 w-72 h-72 rounded-full bg-accent/5 blur-3xl animate-float" style={{ animationDelay: "2s" }}></div>
-      </div>
+      <BackgroundEffects variant="dark" />
       
       <div className="flex flex-col items-center justify-center min-h-screen max-w-4xl mx-auto gap-12 pb-24 relative z-1">
         {/* Hero Section */}
@@ -95,8 +92,6 @@ const HomePage = () => {
           )}
         </div>
         
-        
-        
         {/* Examples Section */}
         <div className="w-full">
           <h2 className="text-2xl font-bold text-white mb-4">Try asking about...</h2>
@@ -104,7 +99,7 @@ const HomePage = () => {
             {examples.map((example, index) => (
               <div 
                 key={index} 
-                className="glassmorphic-dark rounded-xl p-4 border-accent/10 hover:border-accent/30 cursor-pointer transition-all hover:purple-glow-sm transition-all duration-300"
+                className="glassmorphic-dark rounded-xl p-4 border-accent/10 hover:border-accent/30 cursor-pointer transition-all hover:purple-glow-sm duration-300"
                 onClick={() => {
                   setInput(example)
                   resizeInput()
@@ -133,7 +128,7 @@ const HomePage = () => {
             }}
             placeholder="Ask anything..."
             rows={1}
-            className="w-full glassmorphic-dark text-neutral-100 placeholder:text-neutral-400 rounded-xl px-6 py-4 pr-16 resize-none focus:outline-none focus:ring-0 min-h-[56px] max-h-64 overflow-y-auto scrollbar-hide focus:border-accent/50 transition-all purple-glow-sm"
+            className="w-full glassmorphic-dark text-neutral-100 placeholder:text-neutral-400 rounded-xl px-6 py-4 pr-16 resize-none focus:outline-none focus:ring-0 min-h-[56px] max-h-64 overflow-y-auto scrollbar-hide focus:border-accent/50 transition-all"
             style={{
               height: "auto",
               minHeight: "56px",
@@ -145,8 +140,7 @@ const HomePage = () => {
             type="submit"
             onClick={handleSubmit}
             disabled={!input.trim()}
-            variant="purple"
-            className="absolute right-3 bottom-3 size-9 p-0 flex items-center justify-center cursor-pointer"
+            className="absolute right-3 bottom-3 bg-accent/20 backdrop-blur-md border border-accent/30 hover:bg-accent/30 text-neutral-100 disabled:opacity-50 rounded-lg size-9 p-0 flex items-center justify-center cursor-pointer purple-glow-sm"
           >
             <ArrowUp className="size-4" />
           </Button>

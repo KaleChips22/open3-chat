@@ -88,7 +88,7 @@ export default function Chat({ id }: { id: string }) {
   return (
     <div className="h-full w-full flex flex-col bg-neutral-950 text-neutral-100 relative">
       {/* Background Effects */}
-      <BackgroundEffects />
+      <BackgroundEffects variant="dark" />
       
       {/* Chat Container */}
       <div className="relative h-full">
@@ -121,13 +121,13 @@ export default function Chat({ id }: { id: string }) {
                             }}
                             remarkPlugins={[remarkGfm]}
                           >{message.content}</Markdown>
-                        {/* {message.content} */}
+                          {/* {message.content} */}
                       </div>
                     </div>
                   )}
                 </div>
               ))}
-              <div className="h-15 w-full bg-transparent" />
+                <div className="h-15 w-full bg-transparent" />
             </div>
           </ScrollArea>
         </div>
