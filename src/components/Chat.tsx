@@ -30,6 +30,7 @@ export default function Chat({ id }: { id: string }) {
   const messages = useQuery(api.messages.getMessagesForChat, { chatId: id as Id<"chats"> })
   const [input, setInput] = useState("")
   const scrollAreaRef = useRef<HTMLDivElement>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
@@ -45,11 +46,8 @@ export default function Chat({ id }: { id: string }) {
 
   // Auto-scroll to bottom when new messages arrive
   const scrollToBottom = () => {
-    if (scrollAreaRef.current) {
-      const viewport = scrollAreaRef.current.querySelector("[data-radix-scroll-area-viewport]")
-      if (viewport) {
-        viewport.scrollTop = viewport.scrollHeight
-      }
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
     }
   }
 
@@ -68,7 +66,11 @@ export default function Chat({ id }: { id: string }) {
   }
 
   useEffect(() => {
-    scrollToBottom()
+    // Add a small delay to ensure DOM is updated before scrolling
+    const timer = setTimeout(() => {
+      scrollToBottom()
+    }, 100)
+    return () => clearTimeout(timer)
   }, [messages])
 
   useEffect(() => {
@@ -94,7 +96,7 @@ export default function Chat({ id }: { id: string }) {
       <div className="relative h-full">
         {/* Chat Messages */}
         <div className="h-full">
-          <ScrollArea className="h-full p-6" ref={scrollAreaRef} type="hidden">
+          <ScrollArea className="min-h-screen h-full p-6" ref={scrollAreaRef} type="hidden">
             <div className="max-w-4xl mx-auto space-y-6">
               {messages && messages.map((message) => (
                 <div key={message._id} className="w-full">
@@ -121,13 +123,12 @@ export default function Chat({ id }: { id: string }) {
                             }}
                             remarkPlugins={[remarkGfm]}
                           >{message.content}</Markdown>
-                          {/* {message.content} */}
                       </div>
                     </div>
                   )}
                 </div>
               ))}
-                <div className="h-15 w-full bg-transparent" />
+              <div className="h-32 w-full bg-transparent" ref={messagesEndRef} />
             </div>
           </ScrollArea>
         </div>
