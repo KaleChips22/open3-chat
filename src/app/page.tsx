@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { useUser } from "@clerk/nextjs"
 import { api } from "convex/_generated/api"
 import { useMutation, useQuery } from "convex/react"
-import { ArrowUp } from "lucide-react"
+import { ArrowRight, ArrowUp, BrainCircuit, Sparkles, SparklesIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import React, { useEffect, useRef, useState } from "react"
 
@@ -52,73 +52,106 @@ const HomePage = () => {
     }
 
     router.push(`/chat/${newChat}`)
-
-
   }
 
   return (
     <LayoutWithSidebar>
-      <div className="flex flex-col items-baseline justify-center h-screen max-w-2xl mx-auto gap-8">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-4xl font-bold text-white"> Welcome{user ? `, ${user.firstName}` : ' to Open3 Chat'}</h1>
-          <p className="text-lg text-white">
-            Open3 Chat is an open source LLM chat application built for <a href="https://cloneathon.t3.chat/" target="_blank" className="text-blue-400 hover:underline">Theo's T3 Chat Cloneathon</a>
+      {/* Background Effects */}
+      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-accent/5 blur-3xl animate-float" style={{ animationDelay: "0s" }}></div>
+        <div className="absolute bottom-1/3 right-1/4 w-80 h-80 rounded-full bg-accent/5 blur-3xl animate-float" style={{ animationDelay: "1s" }}></div>
+        <div className="absolute top-2/3 left-1/2 w-72 h-72 rounded-full bg-accent/5 blur-3xl animate-float" style={{ animationDelay: "2s" }}></div>
+      </div>
+      
+      <div className="flex flex-col items-center justify-center min-h-screen max-w-4xl mx-auto gap-12 pb-24 relative z-1">
+        {/* Hero Section */}
+        <div className="w-full flex flex-col items-center text-center gap-6 mt-8">
+          <div className="relative">
+            <div className="absolute -inset-1 rounded-full blur-xl bg-accent/20 purple-glow animate-pulse-slow"></div>
+            <div className="relative size-20 rounded-full glassmorphic-dark flex items-center justify-center border-accent/30 purple-glow animate-float">
+              <Sparkles className="size-10 text-accent" />
+            </div>
+          </div>
+          
+          <h1 className="text-5xl font-bold text-white flex flex-col items-center gap-2 mt-4">
+            <span>Welcome{user ? `, ${user.firstName}` : ''}</span>
+            <span className="bg-gradient-to-r from-white via-accent to-white bg-clip-text text-transparent animate-gradient">to Open3 Chat</span>
+          </h1>
+          
+          <p className="text-xl text-neutral-300 max-w-2xl">
+            An intelligent conversation partner powered by state-of-the-art language models. Ask anything and get thoughtful, accurate responses.
           </p>
+          
+          {!user && (
+            <Button 
+              variant="purple" 
+              size="lg" 
+              className="mt-2 text-lg px-8 py-6 h-auto animate-shine"
+              onClick={() => document.querySelector('[data-clerk-sign-in]')?.dispatchEvent(new Event('click', { bubbles: true }))}
+            >
+              Get Started
+              <ArrowRight className="ml-2" />
+            </Button>
+          )}
         </div>
-        <hr className="border-neutral-700 w-full" />
-        <div className="flex flex-col gap-4 w-full mx-auto">
-          <h2 className="text-2xl font-bold text-white">Examples</h2>
-          <div className="flex flex-col gap-2">
-            {examples.map((example, index: number) => (
-              <React.Fragment key={index}>
-              <div className="flex flex-row gap-2">
-                <div className="text-white py-2 px-4 hover:bg-neutral-800/60 rounded-md w-full cursor-pointer transition-all" onClick={() => {
-                    setInput(example)
-                    resizeInput()
-                    inputRef.current?.focus()
-                }}>
-                  {example}
-                </div>
-                </div>
-                {index !== examples.length - 1 && <hr className="border-neutral-700/20 w-full" />}
-              </React.Fragment>
+        
+        
+        
+        {/* Examples Section */}
+        <div className="w-full">
+          <h2 className="text-2xl font-bold text-white mb-4">Try asking about...</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {examples.map((example, index) => (
+              <div 
+                key={index} 
+                className="glassmorphic-dark rounded-xl p-4 border-accent/10 hover:border-accent/30 cursor-pointer transition-all hover:purple-glow-sm transition-all duration-300"
+                onClick={() => {
+                  setInput(example)
+                  resizeInput()
+                  inputRef.current?.focus()
+                }}
+                style={{ animationDelay: `${index * 0.5}s` }}
+              >
+                <p className="text-white">{example}</p>
+              </div>
             ))}
           </div>
         </div>
       </div>
 
-
-      <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 w-full max-w-4xl px-4 text-sm sm:text-base">
-          <div className="relative">
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault()
-                  handleSubmit(e)
-                }
-              }}
-              placeholder="Ask anything..."
-              rows={1}
-              className="w-full bg-black/15 backdrop-blur-md border border-white/10 focus:border-purple-400/50 text-neutral-100 placeholder:text-neutral-400 rounded-xl px-6 py-4 pr-16 resize-none focus:outline-none focus:ring-0 min-h-[56px] max-h-64 overflow-y-auto scrollbar-hide"
-              style={{
-                height: "auto",
-                minHeight: "56px",
-              }}
-              ref={inputRef}
-              onInput={resizeInput}
-            />
-            <Button
-              type="submit"
-              onClick={handleSubmit}
-              disabled={!input.trim()}
-              className="absolute right-3 bottom-3 bg-purple-500/20 backdrop-blur-md border border-purple-400/30 hover:bg-purple-500/30 text-neutral-100 disabled:opacity-50 rounded-lg size-9 p-0 flex items-center justify-center cursor-pointer"
-            >
-              <ArrowUp className="size-4" />
-            </Button>
-          </div>
+      {/* Floating Input */}
+      <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 w-full max-w-4xl px-4 text-sm sm:text-base z-10">
+        <div className="relative">
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault()
+                handleSubmit(e)
+              }
+            }}
+            placeholder="Ask anything..."
+            rows={1}
+            className="w-full glassmorphic-dark text-neutral-100 placeholder:text-neutral-400 rounded-xl px-6 py-4 pr-16 resize-none focus:outline-none focus:ring-0 min-h-[56px] max-h-64 overflow-y-auto scrollbar-hide focus:border-accent/50 transition-all purple-glow-sm"
+            style={{
+              height: "auto",
+              minHeight: "56px",
+            }}
+            ref={inputRef}
+            onInput={resizeInput}
+          />
+          <Button
+            type="submit"
+            onClick={handleSubmit}
+            disabled={!input.trim()}
+            variant="purple"
+            className="absolute right-3 bottom-3 size-9 p-0 flex items-center justify-center cursor-pointer"
+          >
+            <ArrowUp className="size-4" />
+          </Button>
         </div>
+      </div>
     </LayoutWithSidebar>
   )
 }

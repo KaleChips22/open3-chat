@@ -14,6 +14,7 @@ import { useUser } from "@clerk/nextjs"
 import { pushUserMessage } from "@/actions/pushUserMessage"
 import Markdown from "react-markdown"
 import remarkGfm from "remark-gfm"
+import BackgroundEffects from "./BackgroundEffects"
 
 import '@/styles/markdown.css'
 
@@ -25,8 +26,6 @@ export default function Chat({ id }: { id: string }) {
   const chat = useQuery(api.chats.getChat, { id: id as Id<"chats"> })
   
   const createMessage = useMutation(api.messages.createMessage)
-
-  // const [messages, setMessages] = useState<any[]>([]) // mockMessage
   
   const messages = useQuery(api.messages.getMessagesForChat, { chatId: id as Id<"chats"> })
   const [input, setInput] = useState("")
@@ -87,7 +86,10 @@ export default function Chat({ id }: { id: string }) {
   }
 
   return (
-    <div className="h-screen bg-neutral-950 text-neutral-100">
+    <div className="h-full w-full flex flex-col bg-neutral-950 text-neutral-100 relative">
+      {/* Background Effects */}
+      <BackgroundEffects />
+      
       {/* Chat Container */}
       <div className="relative h-full">
         {/* Chat Messages */}
@@ -99,7 +101,7 @@ export default function Chat({ id }: { id: string }) {
                   {message.role === "user" ? (
                     // User message with bubble
                     <div className="flex justify-end">
-                      <div className="max-w-[80%] bg-neutral-800 border border-neutral-700 text-neutral-100 rounded-2xl px-4 py-3">
+                      <div className="max-w-[80%] bg-neutral-800 border border-accent/20 text-neutral-100 rounded-2xl px-4 py-3">
                         <div className="whitespace-pre-wrap break-words text-sm leading-relaxed">{message.content}</div>
                       </div>
                     </div>
@@ -107,6 +109,7 @@ export default function Chat({ id }: { id: string }) {
                     // AI message directly on background
                     <div className="w-full">
                         <div className="whitespace-pre-wrap break-words text-sm leading-relaxed text-neutral-100 max-w-[100%] md:max-w-[80%] markdown">
+                          <div className="mb-1 text-accent/80 text-xs font-medium">AI Assistant</div>
                           <Markdown
                             components={{
                             code: ({ node, ...props }) => <code className="inline" {...props} />,
@@ -143,7 +146,7 @@ export default function Chat({ id }: { id: string }) {
               }}
               placeholder="Type your message..."
               rows={1}
-              className="w-full bg-black/15 backdrop-blur-md border border-white/10 focus:border-purple-400/50 text-neutral-100 placeholder:text-neutral-400 rounded-xl px-6 py-4 pr-16 resize-none focus:outline-none focus:ring-0 min-h-[56px] max-h-64 overflow-y-auto scrollbar-hide"
+              className="w-full glassmorphic-dark text-neutral-100 placeholder:text-neutral-400 rounded-xl px-6 py-4 pr-16 resize-none focus:outline-none focus:ring-0 min-h-[56px] max-h-64 overflow-y-auto scrollbar-hide focus:border-accent/50 transition-all"
               style={{
                 height: "auto",
                 minHeight: "56px",
@@ -155,7 +158,7 @@ export default function Chat({ id }: { id: string }) {
               type="submit"
               onClick={handleSubmit}
               disabled={!input.trim()}
-              className="absolute right-3 bottom-3 bg-purple-500/20 backdrop-blur-md border border-purple-400/30 hover:bg-purple-500/30 text-neutral-100 disabled:opacity-50 rounded-lg size-9 p-0 flex items-center justify-center cursor-pointer"
+              className="absolute right-3 bottom-3 bg-accent/20 backdrop-blur-md border border-accent/30 hover:bg-accent/30 text-neutral-100 disabled:opacity-50 rounded-lg size-9 p-0 flex items-center justify-center cursor-pointer purple-glow-sm"
             >
               <ArrowUp className="size-4" />
             </Button>
