@@ -17,6 +17,12 @@ export async function pushUserMessage(chatId: Id<"chats">, content: string) {
   const previousMessages = await fetchQuery(api.messages.getMessagesForChat, {
     chatId
   })
+  
+  const newAiMessage = await fetchMutation(api.messages.createMessage, {
+    chatId,
+    content: "",
+    role: "assistant"
+  })
 
   const aiResponse = await generateNextCompletion(
     "deepseek/deepseek-chat-v3-0324:free",
@@ -32,11 +38,14 @@ export async function pushUserMessage(chatId: Id<"chats">, content: string) {
     ]
   )
 
-  const newAiMessage = await fetchMutation(api.messages.createMessage, {
-    chatId,
-    content: aiResponse ?? "Sorry, your request could not be processed. Please try again.",
-    role: "assistant"
-  })
+  for await (const chunk of aiResponse) {
+    if (chunk.choices[0]?.delta.content) {
+      await fetchMutation(api.messages.appendMessage, {
+        id: newAiMessage,
+        content: chunk.choices[0]?.delta.content
+      })
+    }
+  }
 
   revalidatePath(`/chat/${chatId}`)
 }

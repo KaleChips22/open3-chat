@@ -32,6 +32,19 @@ export const createMessage = mutation({
   }
 })
 
+export const appendMessage = mutation({
+  args: {
+    id: v.id("messages"),
+    content: v.string()
+  },
+  handler: async (ctx, args) => {
+    const previousContent = (await ctx.db.get(args.id))?.content ?? ""
+    return await ctx.db.patch(args.id, {
+      content: previousContent + args.content
+    })
+  }
+})
+
 export const deleteMessage = mutation({
   args: {
     id: v.id("messages")

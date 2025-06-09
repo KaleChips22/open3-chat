@@ -10,10 +10,11 @@ const aiInterface = new OpenAI({
 })
 
 export const generateNextCompletion = async (model: string, messages: { role: 'user' | 'assistant', content: string }[]) => {
-  const completion = await aiInterface.chat.completions.create({
+  const stream = await aiInterface.chat.completions.create({
     model,
-    messages
+    messages,
+    stream: true
   })
 
-  return completion.choices[0]?.message.content
+  return stream
 }
