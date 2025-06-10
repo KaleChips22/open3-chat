@@ -13,7 +13,7 @@ An open source LLM chat application built for [Theo's T3 Chat Cloneathon](https:
 - [ ] Have multiple models
 - [ ] BYOK w/ Most major carriers (OpenAI, Anthropic, etc.) as well as OpenRouter
 - [ ] Guest Chatting
-- [ ] Syntax Highlighting
+- [X] Syntax Highlighting
 
 ### Requirements
 - [ ] Chat with Various LLMs
@@ -28,7 +28,7 @@ An open source LLM chat application built for [Theo's T3 Chat Cloneathon](https:
 
 ### Other Features
 - [ ] Thinking Detials
-- [ ] Syntax Highlighting
+- [X] Syntax Highlighting
 - [ ] Guest Chatting
 - [ ] BYOK
 - [ ] Resumable streams
@@ -72,15 +72,15 @@ An open source LLM chat application built for [Theo's T3 Chat Cloneathon](https:
 - [X] AI responses should go directly to the sync enginge (convex)
 
 ## Doing Next
-- [ ] Render markdown properly during stream input
+- [X] Render markdown properly during stream input
   - Maybe change md parse providers
-- [ ] Manage State in Stream
+- [ ] Manage State in Stream **IN PROGRESS**
+  - **fix whatever is wrong with the freaking code blocks!!!!!!!!!!!**
   - [ ] Lock input until stream is done
   - [ ] Distinguish between thinking and normal responses
-  - [ ] Web integration (?)
-- [ ] Syntax Highlighting
+  - [ ] Web search integration (?)
+- [X] Syntax Highlighting
 - [ ] Settings Page
   - [ ] Themes
   - [ ] Light/Dark
-
 ### **Last Updated: 06/09/2025,  08:27 AM**
