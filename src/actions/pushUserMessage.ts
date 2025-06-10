@@ -47,5 +47,9 @@ export async function pushUserMessage(chatId: Id<"chats">, content: string) {
     }
   }
 
+  await fetchMutation(api.messages.completeMessage, {
+    id: newAiMessage
+  })
+
   revalidatePath(`/chat/${chatId}`)
 }

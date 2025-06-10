@@ -27,7 +27,8 @@ export const createMessage = mutation({
     return await ctx.db.insert("messages", {
       chatId: args.chatId,
       content: args.content,
-      role: args.role
+      role: args.role,
+      isComplete: false
     })
   }
 })
@@ -41,6 +42,17 @@ export const appendMessage = mutation({
     const previousContent = (await ctx.db.get(args.id))?.content ?? ""
     return await ctx.db.patch(args.id, {
       content: previousContent + args.content
+    })
+  }
+})
+
+export const completeMessage = mutation({
+  args: {
+    id: v.id("messages")
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.patch(args.id, {
+      isComplete: true
     })
   }
 })

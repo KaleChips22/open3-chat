@@ -1,10 +1,10 @@
 "use client"
 
-import type React from "react"
+import React from "react"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, memo } from "react"
 import { Button } from "@/components/ui/button"
-import { ArrowUp } from "lucide-react"
+import { ArrowUp, CopyIcon } from "lucide-react"
 import { ScrollArea } from "@/components/scroll-area"
 import { useMutation, useQuery } from "convex/react"
 import { api } from "../../convex/_generated/api"
@@ -15,12 +15,15 @@ import { pushUserMessage } from "@/actions/pushUserMessage"
 import Markdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import BackgroundEffects from "./BackgroundEffects"
+import { type BundledLanguage } from 'shiki'
 
-import { highlight } from "remark-sugar-high"
+// import { highlight } from "remark-sugar-high"
 
 import '@/styles/markdown.css'
+import { CodeBlock } from "./CodeBlock"
 
 export default function Chat({ id }: { id: string }) {
+  'use no memo'
   const router = useRouter()
 
   const { user, isLoaded } = useUser()
@@ -184,35 +187,10 @@ export default function Chat({ id }: { id: string }) {
                 <div key={message._id} className="w-full">
                   {message.role === "user" ? (
                     // User message with bubble
-                    <div className="flex justify-end">
-                      <div className="max-w-[80%] bg-neutral-800 border border-accent/20 text-neutral-100 rounded-2xl px-4 py-3">
-                        <div className="whitespace-pre-wrap break-words text-sm leading-relaxed">{message.content}</div>
-                      </div>
-                    </div>
+                    <UserMessage message={message} />
                   ) : (
                     // AI message directly on background
-                    <div className="w-full">
-                        <div className="whitespace-pre-wrap break-words text-sm leading-relaxed text-neutral-100 max-w-[100%] md:max-w-[80%] markdown">
-                          <div className="mb-1 text-accent/80 text-xs font-medium">AI Assistant</div>
-                          <Markdown
-                            components={{
-                            code: ({ node, ...props }) => <code className="inline" {...props} />,
-                            pre: ({ node, ...props }) => {
-                              // @ts-ignore
-                              if (!(node && node.children && node.children[0] && node.children[0].properties && node.children[0].properties.className)) return (<pre {...props} />)
-                              
-                              // @ts-ignore
-                              const language = node.children[0]?.properties.className[0].replace("language-", "") || "text"
-                              return <pre {...props} data-language={language} />
-                              }
-                            }}
-                            remarkPlugins={[remarkGfm, highlight]}
-                          >{message.content}</Markdown>
-                          {/* {message._id === lastMessageId && isStreaming && (
-                            <span className="inline-block ml-1 animate-pulse">▌</span>
-                          )} */}
-                      </div>
-                    </div>
+                    <AIMessage message={message} />
                   )}
                 </div>
               ))}
@@ -255,5 +233,93 @@ export default function Chat({ id }: { id: string }) {
         </div>
       </div>
     </div>
+  )
+}
+
+const UserMessage = ({ message }: { message: { content: string } }) => {
+  return (
+    <div className="flex justify-end user-message">
+      <div className="max-w-[60%] bg-neutral-800 border border-accent/20 text-neutral-100 rounded-2xl px-4 py-3">
+        <div className="whitespace-pre-wrap break-words text-sm leading-relaxed">
+          {applyUserCodeBlocks(message.content)}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const AIMessage = memo(({ message }: { message: { content: string } }) => {
+  return (
+    <div className="w-full">
+      <div className="whitespace-pre-wrap break-words text-sm leading-relaxed text-neutral-100 max-w-[100%] md:max-w-[80%] markdown">
+        {/* <div className="mb-1 text-accent/80 text-xs font-medium">AI Assistant</div> */}
+        <Markdown
+          remarkPlugins={[remarkGfm]}
+          components={{
+            pre: ({ node, ...props }) => {
+              // @ts-ignore
+              const language = (node?.children?.[0]?.properties?.className?.[0] || "language-text").replace('language-', '')
+              return <div className="flex flex-col gap-0 mb-2">
+                <div className="py-2 px-4 text-sm text-[oklch(0.80_0.05_300)] bg-neutral-800 flex items-center justify-between">
+                  <span>{language}</span>
+                  <div>
+                    <CopyIcon
+                      className="h-full aspect-square hover:bg-zinc-700 p-1.25 rounded-sm cursor-pointer hover:text-zinc-100 transition-all"
+                      //@ts-ignore
+                      onClick={() => navigator.clipboard.writeText(node.children[0].children[0].value)}
+                    />
+                  </div>
+                </div>
+                <CodeBlock lang={language as BundledLanguage}>
+                  {/* @ts-ignore */}
+                  {node.children[0].children[0].value}
+                </CodeBlock>
+              </div>
+            }
+          }}
+        >{message.content}</Markdown>
+      </div>
+    </div>
+  )
+})
+
+const applyUserCodeBlocks = (message: string) => {
+  // let res = message
+
+  let chunks = message.split('```')
+
+  if (chunks.length === 0) return message
+
+  return (
+    <>
+      {chunks.map((chunk: string, index: number) => {
+        if (index % 2 === 0) return <React.Fragment key={index}>{chunk}</React.Fragment>
+
+        const language = (chunk.match(/^[a-z]*\n/i) || ['text'])[0].replace('\n', '')
+
+        if (language !== 'text')
+          chunk = chunk.replace(language + '\n', '')
+
+        // return <CodeBlock key={index} lang={language as BundledLanguage}>
+        //   {chunk}
+        // </CodeBlock>
+
+        return <div key={index} className="flex flex-col gap-0">
+          <div className="py-2 px-4 text-sm text-[oklch(0.80_0.05_300)] bg-neutral-800 flex items-center justify-between">
+            <span>{language}</span>
+            <div>
+              <CopyIcon
+                className="h-full aspect-square hover:bg-zinc-700 p-1.25 rounded-sm cursor-pointer hover:text-zinc-100 transition-all"
+                //@ts-ignore
+                onClick={() => navigator.clipboard.writeText(chunk)}
+              />
+            </div>
+          </div>
+          <CodeBlock lang={language as BundledLanguage}>
+            {chunk}
+          </CodeBlock>
+        </div>
+      })}
+    </>
   )
 }
