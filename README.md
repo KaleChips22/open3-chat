@@ -75,7 +75,7 @@ An open source LLM chat application built for [Theo's T3 Chat Cloneathon](https:
 - [X] Render markdown properly during stream input
   - Maybe change md parse providers
 - [ ] Manage State in Stream **IN PROGRESS**
-  - **fix whatever is wrong with the freaking code blocks!!!!!!!!!!!**
+  - ~~**fix whatever is wrong with the freaking code blocks!!!!!!!!!!!**~~ (I can't believe i litteraly just forgot an item in the dependancy array this was killing me all night smh)
   - [ ] Lock input until stream is done
   - [ ] Distinguish between thinking and normal responses
   - [ ] Web search integration (?)
