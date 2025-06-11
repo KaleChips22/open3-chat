@@ -41,10 +41,24 @@ export const createChat = mutation({
   handler: async (ctx, args) => {
     const chat = await ctx.db.insert("chats", {
       title: "New Chat",
-      clerkId: args.clerkId
+      clerkId: args.clerkId,
+      hasBeenRenamed: false,
     })
 
     return chat
+  }
+})
+
+export const renameChat = mutation({
+  args: {
+    id: v.id("chats"),
+    name: v.string()
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.id, {
+      title: args.name,
+      hasBeenRenamed: true,
+    })
   }
 })
 

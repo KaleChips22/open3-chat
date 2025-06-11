@@ -7,13 +7,26 @@ An open source LLM chat application built for [Theo's T3 Chat Cloneathon](https:
 
 [https://open3-chat.netlify.app/](https://open3-chat.netlify.app/)
 
+## About
+Open3 Chat is built with the [T3 Stack](https://create.t3.gg/)
+
+### Frontend
+The frontend is written in react, and uses tailwindcss for styling and some shadcn/ui components.
+
+### Database
+Open3 Chat uses convex as its database, due to the live syncing of convex. 
+
+### Backend
+The backend is composed entirely of next.js server actions and convex functions 
+
 ## Todo
 
-- [ ] Model selection
-- [ ] Have multiple models
-- [ ] BYOK w/ Most major carriers (OpenAI, Anthropic, etc.) as well as OpenRouter
+- [X] Model selection
+- [X] Have multiple models
+- [ ] BYOK (w/ Most major carriers (OpenAI, Anthropic, etc.) maybe...) as well as OpenRouter
 - [ ] Guest Chatting
 - [X] Syntax Highlighting
+- [ ] Documentation
 
 ### Requirements
 - [ ] Chat with Various LLMs
@@ -23,7 +36,7 @@ An open source LLM chat application built for [Theo's T3 Chat Cloneathon](https:
   - [ ] Guest Chatting
 
 ### Actual AI Stuff / Required Features
-- [ ] Let users select a model
+- [X] Let users select a model
 - [X] Use streams to generate data live
 
 ### Other Features
@@ -52,7 +65,7 @@ An open source LLM chat application built for [Theo's T3 Chat Cloneathon](https:
   - etc...
 - [ ] Some other dumb shit :)
 
-## Done
+### Done
 - [X] Main UI
   - [X] Landing Page UI
   - [X] Chat Page UI
@@ -70,17 +83,19 @@ An open source LLM chat application built for [Theo's T3 Chat Cloneathon](https:
 - [X] Add first model
 - [X] Use the same functinality to call *all* models
 - [X] AI responses should go directly to the sync enginge (convex)
-
-## Doing Next
 - [X] Render markdown properly during stream input
-  - Maybe change md parse providers
+
+### Doing Next
+- [X] Select Model
+  - [ ] UI Selector (soon)
+  - [X] Backend selection
 - [ ] Manage State in Stream **IN PROGRESS**
   - ~~**fix whatever is wrong with the freaking code blocks!!!!!!!!!!!**~~ (I can't believe i litteraly just forgot an item in the dependancy array this was killing me all night smh)
-  - [ ] Lock input until stream is done
+  - [X] Lock input until stream is done
   - [ ] Distinguish between thinking and normal responses
   - [ ] Web search integration (?)
 - [X] Syntax Highlighting
 - [ ] Settings Page
   - [ ] Themes
   - [ ] Light/Dark
-### **Last Updated: 06/09/2025,  08:27 AM**
+#### **Last Updated: 06/09/2025,  08:27 AM**

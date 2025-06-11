@@ -21,6 +21,8 @@ import { type BundledLanguage } from 'shiki'
 
 import '@/styles/markdown.css'
 import { CodeBlock } from "./CodeBlock"
+import models from "@/models/models"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
 
 export default function Chat({ id }: { id: string }) {
   'use no memo'
@@ -42,6 +44,8 @@ export default function Chat({ id }: { id: string }) {
   const [userHasScrolled, setUserHasScrolled] = useState(false)
   const [previousMessagesLength, setPreviousMessagesLength] = useState(0)
   const [previousLastMessageContent, setPreviousLastMessageContent] = useState("")
+
+  const [selectedModel, setSelectedModel] = useState<number>(0)
 
   useEffect(() => {
     if (!chat) return
@@ -166,7 +170,7 @@ export default function Chat({ id }: { id: string }) {
     e.preventDefault()
     if (!input.trim()) return
 
-    pushUserMessage(id as Id<"chats">, input)
+    pushUserMessage(id as Id<"chats">, input, models[selectedModel]!.name)
     setUserHasScrolled(false) // Reset scroll position when sending a message
     setInput("")
     minimizeInput()
@@ -202,6 +206,19 @@ export default function Chat({ id }: { id: string }) {
         {/* Floating Input */}
         <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 w-full max-w-4xl px-4 text-sm sm:text-base">
           <div className="relative">
+            <div className="absolute top-6 right-6 z-10">
+              <Select value={models[selectedModel]!.name} onValueChange={(value) => setSelectedModel(models.findIndex((model) => model.name === value))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a model" />
+                </SelectTrigger>
+                <SelectContent>
+                  {models.map((model, index) => (
+                    <SelectItem key={index} value={model.name}>{model.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}

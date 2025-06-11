@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import models from "@/models/models";
 
 export const getMessagesForChat = query({
   args: {
@@ -21,14 +22,16 @@ export const createMessage = mutation({
   args: {
     chatId: v.id("chats"),
     content: v.string(),
-    role: v.union(v.literal("user"), v.literal("assistant"))
+    role: v.union(v.literal("user"), v.literal("assistant"), v.literal("system")),
+    model: v.union(...models.map((model) => v.literal(model.name)), v.literal("user"))
   },
   handler: async (ctx, args) => {
     return await ctx.db.insert("messages", {
       chatId: args.chatId,
       content: args.content,
       role: args.role,
-      isComplete: false
+      isComplete: false,
+      model: args.model
     })
   }
 })

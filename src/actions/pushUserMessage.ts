@@ -7,11 +7,18 @@ import { fetchMutation, fetchQuery } from "convex/nextjs";
 import { revalidatePath } from "next/cache";
 import { generateNextCompletion } from "@/models/index";
 
-export async function pushUserMessage(chatId: Id<"chats">, content: string) {
+export async function pushUserMessage(chatId: Id<"chats">, content: string, modelName: string) {
+  const chat = await fetchQuery(api.chats.getChat, {
+    id: chatId
+  })
+
+  console.log(modelName)
+
   const newUserMessage = await fetchMutation(api.messages.createMessage, {
     chatId,
     content,
-    role: "user"
+    role: "user",
+    model: modelName
   })
 
   const previousMessages = await fetchQuery(api.messages.getMessagesForChat, {
@@ -21,11 +28,12 @@ export async function pushUserMessage(chatId: Id<"chats">, content: string) {
   const newAiMessage = await fetchMutation(api.messages.createMessage, {
     chatId,
     content: "",
-    role: "assistant"
+    role: "assistant",
+    model: modelName
   })
 
   const aiResponse = await generateNextCompletion(
-    "deepseek/deepseek-chat-v3-0324:free",
+    modelName,
     [
       ...previousMessages.map((message) => ({
         role: message.role,
