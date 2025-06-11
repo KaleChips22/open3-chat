@@ -23,10 +23,14 @@ The backend is composed entirely of next.js server actions and convex functions
 
 - [X] Model selection
 - [X] Have multiple models
-- [ ] BYOK (w/ Most major carriers (OpenAI, Anthropic, etc.) maybe...) as well as OpenRouter
+- [ ] BYOK (w/ Most major carriers (OpenAI, Anthropic, etc.) maybe...) as well as OpenRouter (fs)
 - [ ] Guest Chatting
 - [X] Syntax Highlighting
-- [ ] Documentation
+- [X] Documentation
+- [ ] Chat actions (retry/delete)
+  - [ ] Layout
+  - [ ] Convex ftns
+  - [ ] 
 
 ### Requirements
 - [ ] Chat with Various LLMs
