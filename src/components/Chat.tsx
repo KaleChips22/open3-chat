@@ -16,6 +16,7 @@ import Markdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import BackgroundEffects from "./BackgroundEffects"
 import { type BundledLanguage } from 'shiki'
+import useLocalStorage from "@/hooks/useLocalStorage"
 
 // import { highlight } from "remark-sugar-high"
 
@@ -45,7 +46,7 @@ export default function Chat({ id }: { id: string }) {
   const [previousMessagesLength, setPreviousMessagesLength] = useState(0)
   const [previousLastMessageContent, setPreviousLastMessageContent] = useState("")
 
-  const [selectedModel, setSelectedModel] = useState<number>(0)
+  const [selectedModel, setSelectedModel] = useLocalStorage("open3:selectedModel", 0)
 
   useEffect(() => {
     if (!chat) return
@@ -170,7 +171,7 @@ export default function Chat({ id }: { id: string }) {
     e.preventDefault()
     if (!input.trim()) return
 
-    pushUserMessage(id as Id<"chats">, input, models[selectedModel]!.name)
+    pushUserMessage(id as Id<"chats">, input, models[selectedModel]!.id)
     setUserHasScrolled(false) // Reset scroll position when sending a message
     setInput("")
     minimizeInput()
@@ -205,15 +206,15 @@ export default function Chat({ id }: { id: string }) {
 
         {/* Floating Input */}
         <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 w-full max-w-4xl px-4 text-sm sm:text-base">
-          <div className="relative">
-            <div className="absolute top-6 right-6 z-10">
-              <Select value={models[selectedModel]!.name} onValueChange={(value) => setSelectedModel(models.findIndex((model) => model.name === value))}>
-                <SelectTrigger>
+          <div className="relative flex flex-col-reverse items-start justify-between gap-2">
+            <div>
+              <Select value={models[selectedModel]!.id} onValueChange={(value) => setSelectedModel(models.findIndex((model) => model.id === value))}>
+                <SelectTrigger className="bg-transparent border border-neutral-800 hover:bg-neutral-800 text-neutral-100 rounded-xl px-4 py-2 transition-all cursor-pointer">
                   <SelectValue placeholder="Select a model" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-black/20 backdrop-blur-md border border-neutral-800 rounded-xl">
                   {models.map((model, index) => (
-                    <SelectItem key={index} value={model.name}>{model.name}</SelectItem>
+                    <SelectItem key={index} value={model.id} className="text-neutral-100 rounded-lg cursor-pointer">{model.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -242,7 +243,7 @@ export default function Chat({ id }: { id: string }) {
               type="submit"
               onClick={handleSubmit}
               disabled={!input.trim() || isStreaming}
-              className="absolute right-3 bottom-3 bg-accent/20 backdrop-blur-md border border-accent/30 hover:bg-accent/30 text-neutral-100 disabled:opacity-50 rounded-lg size-9 p-0 flex items-center justify-center cursor-pointer purple-glow-sm"
+              className="absolute right-3 top-3 bg-accent/20 backdrop-blur-md border border-accent/30 hover:bg-accent/30 text-neutral-100 disabled:opacity-50 rounded-lg size-9 p-0 flex items-center justify-center cursor-pointer purple-glow-sm"
             >
               <ArrowUp className="size-4" />
             </Button>

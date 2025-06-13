@@ -91,7 +91,7 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
                         <SidebarMenuButton className="flex flex-row items-center justify-between gap-2 bg-accent/10 hover:bg-accent/20 text-white hover:text-white rounded-md p-2 py-5 ml-2 w-full cursor-pointer transition-all border border-accent/20 purple-glow-sm group/chat-title">
                           <div className="flex flex-row items-center gap-1 h-full">
                             <MessageCircleIcon className="size-5 text-accent/80" />
-                            <span className="truncate">{chat.title}</span>
+                            <span className="truncate max-w-[8rem]">{chat.title}</span>
                           </div>
                           <div className="flex flex-row items-center justify-end h-full">
                             <div
@@ -126,10 +126,10 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
                           setSidebarOpen(false)
                         }
                       }}>
-                        <SidebarMenuButton className="flex flex-row items-center justify-between bg-transparent hover:bg-neutral-800 hover:border-accent/20 text-white hover:text-white rounded-md p-2 py-5 ml-2 max-w-full w-full cursor-pointer transition-all group/chat-title">
+                        <SidebarMenuButton className="flex flex-row items-center justify-between bg-transparent hover:bg-neutral-800 hover:border-accent/20 active:bg-neutral-800 text-white hover:text-white rounded-md p-2 py-5 ml-2 max-w-full w-full cursor-pointer transition-all group/chat-title">
                           <div className="flex flex-row items-center gap-1 h-full">
                             <MessageCircleIcon className="size-5 text-accent/80" />
-                            <span className="truncate">{chat.title}</span>
+                            <span className="truncate max-w-[8rem]">{chat.title}</span>
                           </div>
                           <div className="flex flex-row items-center justify-end h-full">
                             <div
@@ -159,7 +159,7 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
                     )
                   )) : (
                     <SidebarMenuItem className="flex flex-row items-center gap-2">
-                      <span className="ml-2 mt-1 text-white text-md">No chats found</span>
+                      <span className="w-full mt-1 p-4 text-neutral-400 text-md text-center">No chats found</span>
                     </SidebarMenuItem>
                   )}
 
@@ -185,7 +185,7 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
               </SignedOut>
               <SignedIn>
                 <div className="flex flex-row items-center gap-2 justify-center cursor-pointer w-full relative overflow-hidden">
-                  <UserButton showName={true} appearance={{
+                  {/* <UserButton showName={true} appearance={{
                     variables: {
                       fontSize: '1rem',
                       fontWeight: {
@@ -197,7 +197,11 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
                         padding: '0 2rem',
                       }
                     }
-                  }} />
+                  }} /> */}
+                  <Link href="/settings" className="flex flex-row items-center gap-2 justify-center cursor-pointer w-full transition-colors">
+                    <span>{user?.fullName}</span>
+                    <img src={user?.imageUrl} alt="User" className="size-8 rounded-full" />
+                  </Link>
                 </div>
               </SignedIn>
             </SidebarFooter>

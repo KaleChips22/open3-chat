@@ -1,0 +1,38 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="orb1-pink" cx="0.5" cy="0.5" r="0.5" fx="0.5" fy="0.5">
+      <stop offset="0%" stop-color="rgba(236, 72, 153, 0.15)" />
+      <stop offset="100%" stop-color="rgba(236, 72, 153, 0)" />
+    </radialGradient>
+    <radialGradient id="orb2-pink" cx="0.5" cy="0.5" r="0.5" fx="0.5" fy="0.5">
+      <stop offset="0%" stop-color="rgba(244, 114, 182, 0.1)" />
+      <stop offset="100%" stop-color="rgba(244, 114, 182, 0)" />
+    </radialGradient>
+    <radialGradient id="orb3-pink" cx="0.5" cy="0.5" r="0.5" fx="0.5" fy="0.5">
+      <stop offset="0%" stop-color="rgba(249, 168, 212, 0.12)" />
+      <stop offset="100%" stop-color="rgba(249, 168, 212, 0)" />
+    </radialGradient>
+    <filter id="blur-pink" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="50" />
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="100%" height="100%" fill="#0a0a0a" />
+  
+  <!-- Blurred Orbs -->
+  <g filter="url(#blur-pink)">
+    <!-- Top left orb -->
+    <circle cx="480" cy="270" r="320" fill="url(#orb1-pink)" opacity="0.6" />
+    
+    <!-- Bottom right orb -->
+    <circle cx="1440" cy="810" r="380" fill="url(#orb2-pink)" opacity="0.5" />
+    
+    <!-- Middle orb -->
+    <circle cx="960" cy="540" r="350" fill="url(#orb3-pink)" opacity="0.4" />
+    
+    <!-- Additional smaller orbs -->
+    <circle cx="240" cy="720" r="180" fill="url(#orb1-pink)" opacity="0.3" />
+    <circle cx="1680" cy="360" r="220" fill="url(#orb3-pink)" opacity="0.25" />
+  </g>
+</svg> 

@@ -8,6 +8,7 @@ import { ConvexClientProvider } from "./ConvexClientProvider";
 
 import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
+import { ThemeProvider } from '@/components/ThemeProvider'
 
 export const metadata: Metadata = {
   title: "Open3 Chat",
@@ -29,11 +30,13 @@ export default function RootLayout({
       <body>
         <TRPCReactProvider>
           <ConvexClientProvider>
-            <ClerkProvider appearance={{
-              baseTheme: dark,
-            }}>
-              {children}
-            </ClerkProvider>
+            <ThemeProvider defaultColorTheme="purple" defaultDarkMode={true}>
+              <ClerkProvider appearance={{
+                baseTheme: dark,
+              }}>
+                {children}
+              </ClerkProvider>
+            </ThemeProvider>
           </ConvexClientProvider>
         </TRPCReactProvider>
       </body>

@@ -23,7 +23,7 @@ export const createMessage = mutation({
     chatId: v.id("chats"),
     content: v.string(),
     role: v.union(v.literal("user"), v.literal("assistant"), v.literal("system")),
-    model: v.union(...models.map((model) => v.literal(model.name)), v.literal("user"))
+    model: v.union(...models.map((model) => v.literal(model.id)), v.literal("user"))
   },
   handler: async (ctx, args) => {
     return await ctx.db.insert("messages", {

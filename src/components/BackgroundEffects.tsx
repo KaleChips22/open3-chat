@@ -2,14 +2,17 @@
 
 import React from "react";
 import Image from "next/image";
+import { useTheme } from "./ThemeProvider";
 
 interface BackgroundEffectsProps {
   variant?: "default" | "dark";
 }
 
 export default function BackgroundEffects({ variant = "default" }: BackgroundEffectsProps) {
+  const { colorTheme } = useTheme();
+  
   const backgroundImage = variant === "dark" 
-    ? "/images/background-dark.svg" 
+    ? `/images/background-${colorTheme}.svg`
     : "/images/background.svg";
 
   return (

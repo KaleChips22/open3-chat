@@ -15,11 +15,7 @@ export function CodeBlock({ initial, children, lang }: { initial?: JSX.Element, 
     void highlight(children, lang).then(setNodes)
   }, [children])
 
-  return nodes ?? <pre>
-    <code>
-      {children}
-    </code>
-  </pre>
+  return nodes ?? <pre><code>{children}</code></pre>
 }
 
 // export const CodeBlock = memo(codeblock)

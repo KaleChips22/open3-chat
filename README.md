@@ -30,10 +30,9 @@ The backend is composed entirely of next.js server actions and convex functions
 - [ ] Chat actions (retry/delete)
   - [ ] Layout
   - [ ] Convex ftns
-  - [ ] 
 
 ### Requirements
-- [ ] Chat with Various LLMs
+- [X] Chat with Various LLMs
 - [X] Authentication & Sync
 - [X] Browser Friendly
 - [X] Easy to Try
@@ -49,17 +48,18 @@ The backend is composed entirely of next.js server actions and convex functions
 - [ ] Guest Chatting
 - [ ] BYOK
 - [ ] Resumable streams
-- [ ] Settings Page
+- [X] Settings Page
 
 #### Serious Settings
-- [ ] Switch Themes
+- [X] Switch Themes
   - Purple (default)
   - Red
   - Pink
   - Blue
   - Green
 - [ ] Light/Dark Toggle
-- [ ] BYOK inputs
+- [X] BYOK inputs
+- [ ] BYOK backend support
 - [ ] Code theme (?)
 
 #### Fun dumb shit
@@ -88,18 +88,18 @@ The backend is composed entirely of next.js server actions and convex functions
 - [X] Use the same functinality to call *all* models
 - [X] AI responses should go directly to the sync enginge (convex)
 - [X] Render markdown properly during stream input
+- [X] Syntax Highlighting
+- [X] Select Model
+  - [X] UI Selector (soon)
+  - [X] Backend selection
 
 ### Doing Next
-- [X] Select Model
-  - [ ] UI Selector (soon)
-  - [X] Backend selection
 - [ ] Manage State in Stream **IN PROGRESS**
   - ~~**fix whatever is wrong with the freaking code blocks!!!!!!!!!!!**~~ (I can't believe i litteraly just forgot an item in the dependancy array this was killing me all night smh)
   - [X] Lock input until stream is done
   - [ ] Distinguish between thinking and normal responses
   - [ ] Web search integration (?)
-- [X] Syntax Highlighting
 - [ ] Settings Page
-  - [ ] Themes
+  - [X] Themes
   - [ ] Light/Dark
-#### **Last Updated: 06/09/2025,  08:27 AM**
+#### **Last Updated: 06/12/2025,  11:55 PM**
