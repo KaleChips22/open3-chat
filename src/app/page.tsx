@@ -10,6 +10,8 @@ import { useMutation, useQuery } from "convex/react"
 import { ArrowRight, ArrowUp, BrainCircuit, Sparkles, SparklesIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import React, { useEffect, useRef, useState } from "react"
+import models from "@/models/models"
+import { useTheme } from "@/components/ThemeProvider"
 
 const examples: string[] = [
   "How does AI work?",
@@ -24,6 +26,8 @@ const HomePage = () => {
   const [input, setInput] = useState("")
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const router = useRouter()
+
+  const { colorTheme } = useTheme()
 
   const chats = useQuery(api.chats.getMyChats, {
     clerkId: user?.id ?? ""
@@ -49,7 +53,7 @@ const HomePage = () => {
 
     const newChat = await createChat({ clerkId: user?.id ?? "" })
     if (firstMessage.trim() !== "") {
-      pushUserMessage(newChat, firstMessage)
+      pushUserMessage(newChat, firstMessage, models[2]!.id)
     }
 
     router.push(`/chat/${newChat}`)
@@ -64,8 +68,8 @@ const HomePage = () => {
         {/* Hero Section */}
         <div className="w-full flex flex-col items-center text-center gap-6 mt-8">
           <div className="relative">
-            <div className="absolute -inset-1 rounded-full blur-xl bg-accent/20 purple-glow animate-pulse-slow"></div>
-            <div className="relative size-20 rounded-full glassmorphic-dark flex items-center justify-center border-accent/30 purple-glow animate-float">
+            <div className={`absolute -inset-1 rounded-full blur-xl bg-accent/20 ${colorTheme}-glow animate-pulse-slow`}></div>
+            <div className={`relative size-20 rounded-full glassmorphic-dark flex items-center justify-center border-accent/30 ${colorTheme}-glow animate-float`}>
               <Sparkles className="size-10 text-accent" />
             </div>
           </div>
@@ -99,7 +103,7 @@ const HomePage = () => {
             {examples.map((example, index) => (
               <div 
                 key={index} 
-                className="glassmorphic-dark rounded-xl p-4 border-accent/10 hover:border-accent/30 cursor-pointer transition-all hover:purple-glow-sm duration-300"
+                className={`glassmorphic-dark rounded-xl p-4 border-accent/10 hover:border-accent/30 cursor-pointer transition-all hover:${colorTheme}-glow-sm duration-300`}
                 onClick={() => {
                   setInput(example)
                   resizeInput()
@@ -140,7 +144,7 @@ const HomePage = () => {
             type="submit"
             onClick={handleSubmit}
             disabled={!input.trim()}
-            className="absolute right-3 bottom-3 bg-accent/20 backdrop-blur-md border border-accent/30 hover:bg-accent/30 text-neutral-100 disabled:opacity-50 rounded-lg size-9 p-0 flex items-center justify-center cursor-pointer purple-glow-sm"
+            className={`absolute right-3 bottom-3 bg-accent/20 backdrop-blur-md border border-accent/30 hover:bg-accent/30 text-neutral-100 disabled:opacity-50 rounded-lg size-9 p-0 flex items-center justify-center cursor-pointer ${colorTheme}-glow-sm`}
           >
             <ArrowUp className="size-4" />
           </Button>

@@ -10,12 +10,15 @@ import { api } from '../../convex/_generated/api'
 import { SignedIn, SignedOut, SignInButton, UserButton, useUser } from '@clerk/nextjs'
 import { Button } from './ui/button'
 import type { Id } from 'convex/_generated/dataModel'
+import { useTheme } from './ThemeProvider'
 
 const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactNode, currentChatId?: Id<"chats"> | null }) => {
   const router = useRouter()
   const { user } = useUser()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
+
+  const { colorTheme } = useTheme()
 
   const chats = useQuery(api.chats.getMyChats, { clerkId: user?.id || "" })
   const newChat = useMutation(api.chats.createChat)
@@ -88,7 +91,7 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
                           setSidebarOpen(false)
                         }
                       }}>
-                        <SidebarMenuButton className="flex flex-row items-center justify-between gap-2 bg-accent/10 hover:bg-accent/20 text-white hover:text-white rounded-md p-2 py-5 ml-2 w-full cursor-pointer transition-all border border-accent/20 purple-glow-sm group/chat-title">
+                        <SidebarMenuButton className={`flex flex-row items-center justify-between gap-2 bg-accent/10 hover:bg-accent/20 text-white hover:text-white rounded-md p-2 py-5 ml-2 w-full cursor-pointer transition-all border border-accent/20 ${colorTheme}-glow-sm group/chat-title`}>
                           <div className="flex flex-row items-center gap-1 h-full">
                             <MessageCircleIcon className="size-5 text-accent/80" />
                             <span className="truncate max-w-[8rem]">{chat.title}</span>
@@ -164,7 +167,7 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
                   )}
 
                   <SidebarMenuItem className="flex flex-row items-center gap-2" onClick={makeNewChat}>
-                    <SidebarMenuButton className={chatFound ? 'flex flex-row items-center justify-between bg-transparent hover:bg-neutral-800 hover:border-accent/20 text-white hover:text-white rounded-md p-2 py-5 ml-2 max-w-full w-full cursor-pointer transition-all' : 'flex flex-row items-center gap-2 bg-accent/10 hover:bg-accent/20 text-white hover:text-white rounded-md p-2 py-5 ml-2 w-full cursor-pointer transition-all border border-accent/20 purple-glow-sm'}>
+                    <SidebarMenuButton className={chatFound ? 'flex flex-row items-center justify-between bg-transparent hover:bg-neutral-800 hover:border-accent/20 text-white hover:text-white rounded-md p-2 py-5 ml-2 max-w-full w-full cursor-pointer transition-all' : `flex flex-row items-center gap-2 bg-accent/10 hover:bg-accent/20 text-white hover:text-white rounded-md p-2 py-5 ml-2 w-full cursor-pointer transition-all border border-accent/20 ${colorTheme}-glow-sm`}>
                       <div className="flex flex-row items-center gap-1 h-full">
                         <PlusIcon className="size-5 text-accent" />
                         <span>New Chat</span>

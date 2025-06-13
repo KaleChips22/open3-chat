@@ -24,6 +24,7 @@ import '@/styles/markdown.css'
 import { CodeBlock } from "./CodeBlock"
 import models from "@/models/models"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
+import { useTheme } from "./ThemeProvider"
 
 export default function Chat({ id }: { id: string }) {
   'use no memo'
@@ -32,6 +33,8 @@ export default function Chat({ id }: { id: string }) {
   const { user, isLoaded } = useUser()
 
   const chat = useQuery(api.chats.getChat, { id: id as Id<"chats"> })
+
+  const { colorTheme } = useTheme()
   
   const createMessage = useMutation(api.messages.createMessage)
   
@@ -243,7 +246,7 @@ export default function Chat({ id }: { id: string }) {
               type="submit"
               onClick={handleSubmit}
               disabled={!input.trim() || isStreaming}
-              className="absolute right-3 top-3 bg-accent/20 backdrop-blur-md border border-accent/30 hover:bg-accent/30 text-neutral-100 disabled:opacity-50 rounded-lg size-9 p-0 flex items-center justify-center cursor-pointer purple-glow-sm"
+              className={`absolute right-3 top-3 bg-accent/20 backdrop-blur-md border border-accent/30 hover:bg-accent/30 text-neutral-100 disabled:opacity-50 rounded-lg size-9 p-0 flex items-center justify-center cursor-pointer ${colorTheme}-glow-sm`}
             >
               <ArrowUp className="size-4" />
             </Button>

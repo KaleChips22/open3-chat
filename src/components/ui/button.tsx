@@ -21,6 +21,10 @@ const buttonVariants = cva(
           "hover:bg-accent/10 hover:text-accent",
         link: "text-accent underline-offset-4 hover:underline",
         purple: "bg-accent/20 text-white shadow-xs hover:bg-accent/30 border border-accent/30 purple-glow-sm",
+        red: "bg-accent/20 text-white shadow-xs hover:bg-accent/30 border border-accent/30 red-glow-sm",
+        pink: "bg-accent/20 text-white shadow-xs hover:bg-accent/30 border border-accent/30 pink-glow-sm",
+        blue: "bg-accent/20 text-white shadow-xs hover:bg-accent/30 border border-accent/30 blue-glow-sm",
+        green: "bg-accent/20 text-white shadow-xs hover:bg-accent/30 border border-accent/30 green-glow-sm",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
