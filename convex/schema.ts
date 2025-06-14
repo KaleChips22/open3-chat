@@ -14,6 +14,7 @@ export default defineSchema({
     role: v.union(v.literal("user"), v.literal("assistant"), v.literal("system")),
     model: v.union(...models.map((model) => v.literal(model.id)), v.literal("user")),
     isComplete: v.boolean(),
+    reasoning: v.optional(v.string()),
     // parentId: v.union(v.id("messages"), v.literal("root")),
     // childrenIds: v.array(v.id("messages")),
   }).index("by_chat", ["chatId"]),

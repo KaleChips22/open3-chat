@@ -7,6 +7,11 @@ import { fetchMutation, fetchQuery } from "convex/nextjs";
 import { revalidatePath } from "next/cache";
 import { generateNextCompletion } from "@/models/index";
 
+interface Delta {
+  content?: string;
+  reasoning?: string;
+}
+
 export async function pushUserMessage(chatId: Id<"chats">, content: string, modelName: string) {
   const chat = await fetchQuery(api.chats.getChat, {
     id: chatId
@@ -29,7 +34,8 @@ export async function pushUserMessage(chatId: Id<"chats">, content: string, mode
     chatId,
     content: "",
     role: "assistant",
-    model: modelName
+    model: modelName,
+    reasoning: ""
   })
 
   const aiResponse = await generateNextCompletion(
@@ -47,10 +53,17 @@ export async function pushUserMessage(chatId: Id<"chats">, content: string, mode
   )
 
   for await (const chunk of aiResponse) {
-    if (chunk.choices[0]?.delta.content) {
+    const delta = chunk.choices[0]?.delta as Delta
+    if (delta?.reasoning) {
+      await fetchMutation(api.messages.appendReasoning, {
+        id: newAiMessage,
+        reasoning: delta.reasoning
+      })
+    }
+    if (delta?.content) {
       await fetchMutation(api.messages.appendMessage, {
         id: newAiMessage,
-        content: chunk.choices[0]?.delta.content
+        content: delta.content
       })
     }
   }
@@ -73,10 +86,14 @@ export async function pushLocalUserMessage(chatId: string, content: string, mode
     ]
   )
 
-  const chunks: string[] = []
+  const chunks: { content?: string; reasoning?: string }[] = []
   for await (const chunk of aiResponse) {
-    if (chunk.choices[0]?.delta.content) {
-      chunks.push(chunk.choices[0]?.delta.content)
+    const delta = chunk.choices[0]?.delta as Delta
+    if (delta?.content || delta?.reasoning) {
+      chunks.push({
+        content: delta?.content,
+        reasoning: delta?.reasoning
+      })
     }
   }
 

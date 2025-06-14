@@ -11,7 +11,7 @@ const aiInterface = new OpenAI({
   // }
 })
 
-export const generateNextCompletion = async (model: string, messages: { role: 'user' | 'assistant', content: string }[]) => {
+export const generateNextCompletion = async (model: string, messages: { role: 'user' | 'assistant' | 'system', content: string }[]) => {
   const stream = await aiInterface.chat.completions.create({
     model,
     messages,

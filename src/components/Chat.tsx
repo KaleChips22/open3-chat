@@ -24,6 +24,9 @@ import models from "@/models/models"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
 import { useTheme } from "./ThemeProvider"
 import { LoadingDots } from "./ui/loading-dots"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion"
+import Image from "next/image"
+import featureIcons from "@/models/features"
 
 export default function Chat({ id }: { id: string }) {
   'use no memo'
@@ -52,6 +55,12 @@ export default function Chat({ id }: { id: string }) {
   const [previousLastMessageContent, setPreviousLastMessageContent] = useState("")
 
   const [selectedModel, setSelectedModel] = useLocalStorage("open3:selectedModel", 0)
+
+  useEffect(() => {
+    if (selectedModel > models.length) {
+      setSelectedModel(0)
+    }
+  }, [selectedModel, models])
 
   // Load chat from localStorage if user is not authenticated
   useEffect(() => {
@@ -227,7 +236,10 @@ export default function Chat({ id }: { id: string }) {
         _id: aiMessageId,
         role: "assistant",
         content: "",
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        model: models[selectedModel]!.id,
+        isComplete: false,
+        reasoning: ""
       }
 
       // Add empty AI message to chat
@@ -244,13 +256,23 @@ export default function Chat({ id }: { id: string }) {
       
       // Process chunks with a small delay to simulate streaming
       let fullResponse = ""
+      let fullReasoning = ""
       for (const chunk of chunks) {
-        fullResponse += chunk
+        if (chunk.content) {
+          fullResponse += chunk.content
+        }
+        if (chunk.reasoning) {
+          fullReasoning += chunk.reasoning
+        }
         
-        // Update AI message with new content
+        // Update AI message with new content and reasoning
         const updatedMessages = chatWithAiMessage.messages.map(msg => 
           msg._id === aiMessageId 
-            ? { ...msg, content: fullResponse }
+            ? { 
+                ...msg, 
+                content: fullResponse,
+                reasoning: fullReasoning
+              }
             : msg
         )
         
@@ -265,6 +287,21 @@ export default function Chat({ id }: { id: string }) {
         // Add a small delay between chunks to simulate streaming
         await new Promise(resolve => setTimeout(resolve, 10))
       }
+
+      // Mark the message as complete after all chunks are processed
+      const finalMessages = chatWithAiMessage.messages.map(msg => 
+        msg._id === aiMessageId 
+          ? { ...msg, isComplete: true, content: fullResponse }
+          : msg
+      )
+      
+      const finalChat = {
+        ...chatWithAiMessage,
+        messages: finalMessages
+      }
+      
+      setLocalChat(finalChat)
+      localStorage.setItem(`open3:chat:${id}`, JSON.stringify(finalChat))
     }
 
     setUserHasScrolled(false) // Reset scroll position when sending a message
@@ -284,7 +321,7 @@ export default function Chat({ id }: { id: string }) {
         <div className="h-full">
           <ScrollArea className="min-h-screen h-full p-6" ref={scrollAreaRef} type="hidden">
             <div className="max-w-4xl mx-auto space-y-6">
-              {displayMessages && displayMessages.map((message) => (
+              {displayMessages && displayMessages.length > 0 ? displayMessages.map((message) => (
                 <div key={message._id} className="w-full">
                   {message.role === "user" ? (
                     // User message with bubble
@@ -294,7 +331,13 @@ export default function Chat({ id }: { id: string }) {
                     <AIMessage message={message} />
                   )}
                 </div>
-              ))}
+              )) : (
+                <div className="w-full h-full mt-24 flex items-center justify-center">
+                  <div className="flex flex-col items-center justify-center gap-2 text-center">
+                    <h1 className="text-2xl font-bold">Ask me anything...</h1>
+                  </div>
+                </div>
+              )}
               <div className="h-32 w-full bg-transparent" ref={messagesEndRef} />
             </div>
           </ScrollArea>
@@ -310,7 +353,22 @@ export default function Chat({ id }: { id: string }) {
                 </SelectTrigger>
                 <SelectContent className="bg-black/20 backdrop-blur-md border border-neutral-800 rounded-xl">
                   {models.map((model, index) => (
-                    <SelectItem key={index} value={model.id} className="text-neutral-100 rounded-lg cursor-pointer active:bg-neutral-800">{model.name}</SelectItem>
+                    <SelectItem key={index} value={model.id} className="text-neutral-100 rounded-lg cursor-pointer active:bg-neutral-800">
+                      <div className="flex flex-row items-center gap-2 justify-between">
+                        <Image src={model.icon} alt={model.name} className="size-4 text-white" />
+                        {model.name}
+                      </div>
+                      {/* Show features in dropdown menu */}
+                      {model.features && (
+                        <div className="flex flex-row items-center gap-2">
+                          {model.features.map((feature) => (
+                            <div key={feature} className="text-xs text-neutral-400">
+                              {featureIcons[feature as keyof typeof featureIcons]}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -368,40 +426,50 @@ const UserMessage = ({ message }: { message: { content: string } }) => {
   )
 }
 
-const AIMessage = memo(({ message }: { message: { content: string, model: string, isComplete: boolean } }) => {
-  const isStreaming = message.content === ""
-  
+const AIMessage = memo(({ message }: { message: { content: string, model: string, isComplete: boolean, reasoning?: string } }) => {
   return (
     <div className="w-full">
       <div className="whitespace-pre-wrap break-words text-sm leading-relaxed text-neutral-100 max-w-[100%] md:max-w-[80%] markdown">
-        {isStreaming ? (
+        {message.reasoning === "" && message.content === "" ? (
           <LoadingDots className="mt-2" />
         ) : (
-          <Markdown
-            remarkPlugins={[remarkGfm]}
-            components={{
-              pre: ({ node, ...props }) => {
-                // @ts-ignore
-                const language = (node?.children?.[0]?.properties?.className?.[0] || "language-text").replace('language-', '')
-                return <div className="flex flex-col gap-0 mb-2">
-                  <div className="py-2 px-4 text-sm text-[oklch(0.80_0.05_300)] bg-neutral-800 flex items-center justify-between">
-                    <span>{language}</span>
-                    <div>
-                      <CopyIcon
-                        className="h-full aspect-square hover:bg-zinc-700 p-1.25 rounded-sm cursor-pointer hover:text-zinc-100 transition-all"
-                        //@ts-ignore
-                        onClick={() => navigator.clipboard.writeText(node.children[0].children[0].value)}
-                      />
+          <>
+            {message.reasoning && (
+              <Accordion type="single" collapsible className="w-full" defaultValue="reasoning">
+                <AccordionItem value="reasoning">
+                  <AccordionTrigger className="text-sm text-neutral-300 hover:text-neutral-100 cursor-pointer">Reasoning</AccordionTrigger>
+                  <AccordionContent className="text-sm text-neutral-300">
+                    {message.reasoning}
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            )}
+            <Markdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                pre: ({ node, ...props }) => {
+                  // @ts-ignore
+                  const language = (node?.children?.[0]?.properties?.className?.[0] || "language-text").replace('language-', '')
+                  return <div className="flex flex-col gap-0 mb-2">
+                    <div className="py-2 px-4 text-sm text-[oklch(0.80_0.05_300)] bg-neutral-800 flex items-center justify-between">
+                      <span>{language}</span>
+                      <div>
+                        <CopyIcon
+                          className="h-full aspect-square hover:bg-zinc-700 p-1.25 rounded-sm cursor-pointer hover:text-zinc-100 transition-all"
+                          //@ts-ignore
+                          onClick={() => navigator.clipboard.writeText(node.children[0].children[0].value)}
+                        />
+                      </div>
                     </div>
+                    <CodeBlock lang={Object.keys(bundledLanguages).includes(language) ? language : 'text'}>
+                      {/* @ts-ignore */}
+                      {node.children[0].children[0].value}
+                    </CodeBlock>
                   </div>
-                  <CodeBlock lang={Object.keys(bundledLanguages).includes(language) ? language : 'text'}>
-                    {/* @ts-ignore */}
-                    {node.children[0].children[0].value}
-                  </CodeBlock>
-                </div>
-              }
-            }}
-          >{message.content}</Markdown>
+                }
+              }}
+            >{message.content}</Markdown>
+          </>
         )}
         <div className="mt-1 text-xs text-neutral-500 flex flex-row items-center gap-1">
           Generated by {models.find((model) => model.id === message.model)?.name}
