@@ -1,7 +1,7 @@
 'use client'
 
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
-import { LogInIcon, MessageCircleIcon, PencilIcon, PlusIcon, SparklesIcon, TrashIcon, CheckIcon } from 'lucide-react'
+import { LogInIcon, MessageCircleIcon, PencilIcon, PlusIcon, SparklesIcon, TrashIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import React, { useState, useEffect } from 'react'
@@ -11,7 +11,6 @@ import { SignedIn, SignedOut, SignInButton, UserButton, useUser } from '@clerk/n
 import { Button } from './ui/button'
 import type { Id } from 'convex/_generated/dataModel'
 import { useTheme } from './ThemeProvider'
-import { Input } from './ui/input'
 
 const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactNode, currentChatId?: Id<"chats"> | null }) => {
   const router = useRouter()
@@ -19,8 +18,6 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
   const [localChats, setLocalChats] = useState<{ id: string, title: string }[]>([])
-  const [editingChatId, setEditingChatId] = useState<string | null>(null)
-  const [editingTitle, setEditingTitle] = useState("")
 
   const { colorTheme } = useTheme()
 
@@ -106,29 +103,22 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
   }
 
   const handleRenameChat = (chatId: string, currentTitle: string) => {
-    setEditingChatId(chatId)
-    setEditingTitle(currentTitle)
-  }
-
-  const handleSaveRename = async () => {
-    if (!editingChatId || !editingTitle.trim()) return
-
     if (user) {
-      await renameChat({
-        id: editingChatId as Id<"chats">,
-        name: editingTitle
+      renameChat({
+        id: chatId as Id<"chats">,
+        name: prompt("Rename chat", currentTitle)!
       })
     } else {
-      const chatData = JSON.parse(localStorage.getItem(`open3:chat:${editingChatId}`) ?? "{}")
-      chatData.title = editingTitle
-      localStorage.setItem(`open3:chat:${editingChatId}`, JSON.stringify(chatData))
-      setLocalChats(chats => chats.map(chat => 
-        chat.id === editingChatId ? { ...chat, title: editingTitle } : chat
-      ))
+      const newTitle = prompt("Rename chat", currentTitle)
+      if (newTitle) {
+        const chatData = JSON.parse(localStorage.getItem(`open3:chat:${chatId}`) ?? "{}")
+        chatData.title = newTitle
+        localStorage.setItem(`open3:chat:${chatId}`, JSON.stringify(chatData))
+        setLocalChats(chats => chats.map(chat => 
+          chat.id === chatId ? { ...chat, title: newTitle } : chat
+        ))
+      }
     }
-
-    setEditingChatId(null)
-    setEditingTitle("")
   }
 
   const handleDeleteChat = (chatId: string) => {
@@ -148,12 +138,6 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
   // Get chats based on authentication status
   const displayChats = user ? chats : localChats
 
-  type Chat = { _id: Id<"chats">; _creationTime: number; title: string; clerkId: string; hasBeenRenamed: boolean; } | { id: string; title: string; }
-
-  const getChatId = (chat: Chat) => {
-    return '_id' in chat ? chat._id : chat.id
-  }
-
   return (
     <div className="h-screen w-full bg-neutral-950 overflow-x-hidden">
       <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
@@ -169,134 +153,77 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
               <SidebarGroup className="flex flex-col mt-4 gap-1">
                 <SidebarGroupLabel className="text-white text-lg font-semibold px-4">My Chats</SidebarGroupLabel>
                 <SidebarGroupContent className="flex flex-col gap-2">
-                  {displayChats && displayChats.length > 0 ? (
-                    displayChats.map((chat: Chat) => {
-                      const chatId = getChatId(chat)
-                      return currentChatId === chatId ? (
-                        <SidebarMenuItem key={chatId} className="flex flex-row items-center gap-2" onClick={() => {
-                          router.push(`/chat/${chatId}`)
-                          if (isMobile) {
-                            setSidebarOpen(false)
-                          }
-                        }}>
-                          <SidebarMenuButton className={`flex flex-row items-center justify-between gap-2 bg-accent/10 hover:bg-accent/20 text-white hover:text-white rounded-md p-2 py-5 ml-2 w-full cursor-pointer transition-all border border-accent/20 ${colorTheme}-glow-sm group/chat-title`}>
-                            <div className="flex flex-row items-center gap-1 h-full">
-                              <MessageCircleIcon className="size-5 text-accent/80" />
-                              {editingChatId === chatId ? (
-                                <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                                  <Input
-                                    value={editingTitle}
-                                    onChange={(e) => setEditingTitle(e.target.value)}
-                                    onKeyDown={(e) => {
-                                      if (e.key === "Enter") {
-                                        handleSaveRename()
-                                      } else if (e.key === "Escape") {
-                                        setEditingChatId(null)
-                                        setEditingTitle("")
-                                      }
-                                    }}
-                                    className="h-6 px-2 py-1 text-sm bg-neutral-800 border-neutral-700 focus:border-accent/50"
-                                    autoFocus
-                                  />
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-6 w-6 text-neutral-400 hover:text-white"
-                                    onClick={handleSaveRename}
-                                  >
-                                    <CheckIcon className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              ) : (
-                                <span className="truncate max-w-[8rem]">{chat.title}</span>
-                              )}
+                  {displayChats && displayChats.length > 0 ? displayChats.map((chat) => (
+                    currentChatId === (user ? chat._id : chat.id) ? (
+                      <SidebarMenuItem key={user ? chat._id : chat.id} className="flex flex-row items-center gap-2" onClick={() => {
+                        router.push(`/chat/${user ? chat._id : chat.id}`)
+                        if (isMobile) {
+                          setSidebarOpen(false)
+                        }
+                      }}>
+                        <SidebarMenuButton className={`flex flex-row items-center justify-between gap-2 bg-accent/10 hover:bg-accent/20 text-white hover:text-white rounded-md p-2 py-5 ml-2 w-full cursor-pointer transition-all border border-accent/20 ${colorTheme}-glow-sm group/chat-title`}>
+                          <div className="flex flex-row items-center gap-1 h-full">
+                            <MessageCircleIcon className="size-5 text-accent/80" />
+                            <span className="truncate max-w-[8rem]">{chat.title}</span>
+                          </div>
+                          <div className="flex flex-row items-center gap-1">
+                            <div
+                              className="flex items-center justify-center cursor-pointer text-neutral-400 hover:text-white group-hover/chat-title:opacity-100 opacity-0 transition-all p-1"
+                              onClick={(e) => {
+                                handleRenameChat(user ? chat._id : chat.id, chat.title)
+                                e.stopPropagation()
+                              }}
+                            >
+                              <PencilIcon className="size-4" />
                             </div>
-                            <div className="flex items-center gap-1">
-                              <div
-                                className="flex items-center justify-center cursor-pointer text-neutral-400 hover:text-white group-hover/chat-title:opacity-100 opacity-0 transition-all p-1"
-                                onClick={(e) => {
-                                  handleRenameChat(chatId, chat.title)
-                                  e.stopPropagation()
-                                }}
-                              >
-                                <PencilIcon className="size-4" />
-                              </div>
-                              <div
-                                className="flex items-center justify-center cursor-pointer text-neutral-400 hover:text-red-500 group-hover/chat-title:opacity-100 opacity-0 transition-all p-1"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleDeleteChat(chatId)
-                                }}
-                              >
-                                <TrashIcon className="size-4" />
-                              </div>
+                            <div
+                              className="flex items-center justify-center cursor-pointer text-neutral-400 hover:text-red-500 group-hover/chat-title:opacity-100 opacity-0 transition-all p-1"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleDeleteChat(user ? chat._id : chat.id)
+                              }}
+                            >
+                              <TrashIcon className="size-4" />
                             </div>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      ) : (
-                        <SidebarMenuItem key={chatId} className="flex flex-row items-center gap-2 group" onClick={() => {
-                          router.push(`/chat/${chatId}`)
-                          if (isMobile) {
-                            setSidebarOpen(false)
-                          }
-                        }}>
-                          <SidebarMenuButton className="flex flex-row items-center justify-between bg-transparent hover:bg-neutral-800 hover:border-accent/20 active:bg-neutral-800 text-white hover:text-white rounded-md p-2 py-5 ml-2 max-w-full w-full cursor-pointer transition-all group/chat-title">
-                            <div className="flex flex-row items-center gap-1 h-full">
-                              <MessageCircleIcon className="size-5 text-accent/80" />
-                              {editingChatId === chatId ? (
-                                <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                                  <Input
-                                    value={editingTitle}
-                                    onChange={(e) => setEditingTitle(e.target.value)}
-                                    onKeyDown={(e) => {
-                                      if (e.key === "Enter") {
-                                        handleSaveRename()
-                                      } else if (e.key === "Escape") {
-                                        setEditingChatId(null)
-                                        setEditingTitle("")
-                                      }
-                                    }}
-                                    className="h-6 px-2 py-1 text-sm bg-neutral-800 border-neutral-700 focus:border-accent/50"
-                                    autoFocus
-                                  />
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-6 w-6 text-neutral-400 hover:text-white"
-                                    onClick={handleSaveRename}
-                                  >
-                                    <CheckIcon className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              ) : (
-                                <span className="truncate max-w-[8rem]">{chat.title}</span>
-                              )}
+                          </div>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ) : (
+                      <SidebarMenuItem key={user ? chat._id : chat.id} className="flex flex-row items-center gap-2 group" onClick={() => {
+                        router.push(`/chat/${user ? chat._id : chat.id}`)
+                        if (isMobile) {
+                          setSidebarOpen(false)
+                        }
+                      }}>
+                        <SidebarMenuButton className="flex flex-row items-center justify-between bg-transparent hover:bg-neutral-800 hover:border-accent/20 active:bg-neutral-800 text-white hover:text-white rounded-md p-2 py-5 ml-2 max-w-full w-full cursor-pointer transition-all group/chat-title">
+                          <div className="flex flex-row items-center gap-1 h-full">
+                            <MessageCircleIcon className="size-5 text-accent/80" />
+                            <span className="truncate max-w-[8rem]">{chat.title}</span>
+                          </div>
+                          <div className="flex flex-row items-center gap-1">
+                            <div
+                              className="flex items-center justify-center cursor-pointer text-neutral-400 hover:text-white group-hover/chat-title:opacity-100 opacity-0 transition-all p-1"
+                              onClick={(e) => {
+                                handleRenameChat(user ? chat._id : chat.id, chat.title)
+                                e.stopPropagation()
+                              }}
+                            >
+                              <PencilIcon className="size-4" />
                             </div>
-                            <div className="flex items-center gap-1">
-                              <div
-                                className="flex items-center justify-center cursor-pointer text-neutral-400 hover:text-white group-hover/chat-title:opacity-100 opacity-0 transition-all p-1"
-                                onClick={(e) => {
-                                  handleRenameChat(chatId, chat.title)
-                                  e.stopPropagation()
-                                }}
-                              >
-                                <PencilIcon className="size-4" />
-                              </div>
-                              <div
-                                className="flex items-center justify-center cursor-pointer text-neutral-400 hover:text-red-500 group-hover/chat-title:opacity-100 opacity-0 transition-all p-1"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleDeleteChat(chatId)
-                                }}
-                              >
-                                <TrashIcon className="size-4" />
-                              </div>
+                            <div
+                              className="flex items-center justify-center cursor-pointer text-neutral-400 hover:text-red-500 group-hover/chat-title:opacity-100 opacity-0 transition-all p-1"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleDeleteChat(user ? chat._id : chat.id)
+                              }}
+                            >
+                              <TrashIcon className="size-4" />
                             </div>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      )
-                    })
-                  ) : (
+                          </div>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    )
+                  )) : (
                     <SidebarMenuItem className="flex flex-row items-center gap-2">
                       <span className="w-full mt-1 p-4 text-neutral-400 text-md text-center">No chats found</span>
                     </SidebarMenuItem>
