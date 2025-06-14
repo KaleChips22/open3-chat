@@ -14,7 +14,7 @@ export const getMyChats = query({
     clerkId: v.string()
   },
   handler: async (ctx, args) => {
-    return await ctx.db.query("chats").filter((q) => q.eq(q.field("clerkId"), args.clerkId)).collect()
+    return await ctx.db.query("chats").withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId)).collect()
   }
 })
 
@@ -67,7 +67,7 @@ export const deleteChat = mutation({
     id: v.id("chats")
   },
   handler: async (ctx, args) => {
-    const messages = await ctx.db.query("messages").filter((q) => q.eq(q.field("chatId"), args.id)).collect()
+    const messages = await ctx.db.query("messages").withIndex("by_chat", (q) => q.eq("chatId", args.id)).collect()
 
     for (const message of messages) {
       await ctx.db.delete(message._id)

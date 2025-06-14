@@ -9,8 +9,9 @@ export const getMessagesForChat = query({
   handler: async (ctx, args) => {
     return (await ctx.db
       .query("messages")
-      .filter(
-        (q) => q.eq(q.field("chatId"), args.chatId)
+      .withIndex(
+        "by_chat",
+        (q) => q.eq("chatId", args.chatId)
       )
       .order("desc")
       .collect())
