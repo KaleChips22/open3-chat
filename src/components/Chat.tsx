@@ -32,8 +32,8 @@ import featureIcons from "@/models/features"
 export default function Chat({ id }: { id: string }) {
   'use no memo'
   const router = useRouter()
-
   const { user, isLoaded } = useUser()
+  const isStreamingRef = useRef(false)
 
   // Only query Convex if user is authenticated
   const chat = useQuery(api.chats.getChat, user ? { id: id as Id<"chats"> } : "skip")
@@ -122,6 +122,7 @@ export default function Chat({ id }: { id: string }) {
   // Handle streaming for new chats with empty AI messages
   useEffect(() => {
     if (!localChat?.messages || localChat.messages.length === 0) return
+    if (isStreamingRef.current) return // Prevent multiple streams
     
     const lastMessage = localChat.messages[localChat.messages.length - 1]
     if (lastMessage.role === "assistant" && !lastMessage.isComplete && lastMessage.content === "") {
@@ -130,63 +131,82 @@ export default function Chat({ id }: { id: string }) {
 
       // Start streaming the response
       const streamResponse = async () => {
+        if (isStreamingRef.current) return // Double check before starting
+        isStreamingRef.current = true
         setIsStreaming(true)
-        const chunks = await pushLocalUserMessage(id, previousMessage.content, lastMessage.model)
         
-        let fullResponse = ""
-        let fullReasoning = ""
-        
-        for await (const chunk of chunks) {
-          if (chunk.content) {
-            fullResponse += chunk.content
+        try {
+          const chunks = await pushLocalUserMessage(id, previousMessage.content, lastMessage.model)
+          
+          let fullResponse = ""
+          let fullReasoning = ""
+          
+          for await (const chunk of chunks) {
+            if (!isStreamingRef.current) break // Stop if streaming was cancelled
+            
+            if (chunk.content) {
+              fullResponse += chunk.content
+            }
+            if (chunk.reasoning) {
+              fullReasoning += chunk.reasoning
+            }
+            
+            // Update the AI message with new content
+            const updatedMessages = localChat.messages.map(msg => 
+              msg._id === lastMessage._id 
+                ? { 
+                    ...msg, 
+                    content: fullResponse,
+                    reasoning: fullReasoning
+                  }
+                : msg
+            )
+            
+            const updatedChat = {
+              ...localChat,
+              messages: updatedMessages
+            }
+            
+            setLocalChat(updatedChat)
+            localStorage.setItem(`open3:chat:${id}`, JSON.stringify(updatedChat))
+            
+            // Add a small delay between chunks to simulate streaming
+            await new Promise(resolve => setTimeout(resolve, 10))
           }
-          if (chunk.reasoning) {
-            fullReasoning += chunk.reasoning
-          }
-          
-          // Update the AI message with new content
-          const updatedMessages = localChat.messages.map(msg => 
-            msg._id === lastMessage._id 
-              ? { 
-                  ...msg, 
-                  content: fullResponse,
-                  reasoning: fullReasoning
-                }
-              : msg
-          )
-          
-          const updatedChat = {
-            ...localChat,
-            messages: updatedMessages
-          }
-          
-          setLocalChat(updatedChat)
-          localStorage.setItem(`open3:chat:${id}`, JSON.stringify(updatedChat))
-          
-          // Add a small delay between chunks to simulate streaming
-          await new Promise(resolve => setTimeout(resolve, 10))
-        }
 
-        // Mark the message as complete
-        const finalMessages = localChat.messages.map(msg => 
-          msg._id === lastMessage._id 
-            ? { ...msg, isComplete: true, content: fullResponse, reasoning: fullReasoning }
-            : msg
-        )
-        
-        const finalChat = {
-          ...localChat,
-          messages: finalMessages
+          // Only mark as complete if we're still streaming (weren't cancelled)
+          if (isStreamingRef.current) {
+            const finalMessages = localChat.messages.map(msg => 
+              msg._id === lastMessage._id 
+                ? { ...msg, isComplete: true, content: fullResponse, reasoning: fullReasoning }
+                : msg
+            )
+            
+            const finalChat = {
+              ...localChat,
+              messages: finalMessages
+            }
+            
+            setLocalChat(finalChat)
+            localStorage.setItem(`open3:chat:${id}`, JSON.stringify(finalChat))
+          }
+        } finally {
+          isStreamingRef.current = false
+          setIsStreaming(false)
         }
-        
-        setLocalChat(finalChat)
-        localStorage.setItem(`open3:chat:${id}`, JSON.stringify(finalChat))
-        setIsStreaming(false)
       }
 
       streamResponse()
     }
   }, [localChat, id])
+
+  // Cleanup streaming state when component unmounts
+  useEffect(() => {
+    return () => {
+      isStreamingRef.current = false
+      setIsStreaming(false)
+    }
+  }, [])
 
   // Auto-scroll to bottom when new messages arrive or during streaming
   const scrollToBottom = () => {
