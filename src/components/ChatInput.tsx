@@ -64,7 +64,7 @@ export default function ChatInput({
               {models.map((model, index) => (
                 <SelectItem key={index} value={model.id} className="text-neutral-100 rounded-lg cursor-pointer active:bg-neutral-800">
                   <div className="flex flex-row items-center gap-2 justify-between">
-                    <model.icon className="size-4 text-white" />
+                    <img src={model.icon} alt={model.name} className="size-4 text-white" />
                     {model.name}
                   </div>
                   {model.features && (

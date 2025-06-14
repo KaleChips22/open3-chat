@@ -1,4 +1,4 @@
-import DeepseekIcon from "@/models/icons/deepseek.svg"
+const deepseek = "/icons/deepseek.svg"
 
 const models = [
   // {
@@ -17,7 +17,7 @@ const models = [
     name: "Deepseek Chat v3",
     id: "deepseek/deepseek-chat-v3-0324:free",
     description: "The latest model from DeepSeek",
-    icon: DeepseekIcon,
+    icon: deepseek,
     features: [
       "free",
     ]
@@ -26,7 +26,7 @@ const models = [
     name: "Deepseek R1",
     id: "deepseek/deepseek-r1-0528:free",
     description: "The latest R1 model from DeepSeek",
-    icon: DeepseekIcon,
+    icon: deepseek,
     features: [
       "free",
       "reasoning",
