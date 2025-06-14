@@ -1,7 +1,7 @@
 'use client'
 
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
-import { LogInIcon, MessageCircleIcon, PencilIcon, PlusIcon, SparklesIcon, TrashIcon } from 'lucide-react'
+import { LogInIcon, MessageCircleIcon, PencilIcon, PlusIcon, SparklesIcon, TrashIcon, CheckIcon, XIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import React, { useState, useEffect } from 'react'
@@ -18,6 +18,8 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
   const [localChats, setLocalChats] = useState<{ id: string, title: string }[]>([])
+  const [renamingChatId, setRenamingChatId] = useState<string | null>(null)
+  const [renameInput, setRenameInput] = useState("")
 
   const { colorTheme } = useTheme()
 
@@ -103,22 +105,33 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
   }
 
   const handleRenameChat = (chatId: string, currentTitle: string) => {
+    setRenamingChatId(chatId)
+    setRenameInput(currentTitle)
+  }
+
+  const handleConfirmRename = () => {
+    if (!renameInput.trim()) return
+    
     if (user) {
       renameChat({
-        id: chatId as Id<"chats">,
-        name: prompt("Rename chat", currentTitle)!
+        id: renamingChatId as Id<"chats">,
+        name: renameInput
       })
     } else {
-      const newTitle = prompt("Rename chat", currentTitle)
-      if (newTitle) {
-        const chatData = JSON.parse(localStorage.getItem(`open3:chat:${chatId}`) ?? "{}")
-        chatData.title = newTitle
-        localStorage.setItem(`open3:chat:${chatId}`, JSON.stringify(chatData))
-        setLocalChats(chats => chats.map(chat => 
-          chat.id === chatId ? { ...chat, title: newTitle } : chat
-        ))
-      }
+      const chatData = JSON.parse(localStorage.getItem(`open3:chat:${renamingChatId}`) ?? "{}")
+      chatData.title = renameInput
+      localStorage.setItem(`open3:chat:${renamingChatId}`, JSON.stringify(chatData))
+      setLocalChats(chats => chats.map(chat => 
+        chat.id === renamingChatId ? { ...chat, title: renameInput } : chat
+      ))
     }
+    setRenamingChatId(null)
+    setRenameInput("")
+  }
+
+  const handleCancelRename = () => {
+    setRenamingChatId(null)
+    setRenameInput("")
   }
 
   const handleDeleteChat = (chatId: string) => {
@@ -164,28 +177,68 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
                         <SidebarMenuButton className={`flex flex-row items-center justify-between gap-2 bg-accent/10 hover:bg-accent/20 text-white hover:text-white rounded-md p-2 py-5 ml-2 w-full cursor-pointer transition-all border border-accent/20 ${colorTheme}-glow-sm group/chat-title`}>
                           <div className="flex flex-row items-center gap-1 h-full">
                             <MessageCircleIcon className="size-5 text-accent/80" />
-                            <span className="truncate max-w-[8rem]">{chat.title}</span>
+                            {renamingChatId === (user ? chat._id : chat.id) ? (
+                              <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                <input
+                                  type="text"
+                                  value={renameInput}
+                                  onChange={(e) => setRenameInput(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      handleConfirmRename()
+                                    } else if (e.key === "Escape") {
+                                      handleCancelRename()
+                                    }
+                                  }}
+                                  className="bg-transparent border border-accent/30 rounded px-1 py-0.5 text-sm focus:outline-none focus:border-accent/50 max-w-[9rem] text-white"
+                                  autoFocus
+                                />
+                                <Button
+                                  asChild
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={handleConfirmRename}
+                                  className="text-neutral-400 hover:text-white transition-colors size-5 p-0.5"
+                                >
+                                  <CheckIcon className="size-4" />
+                                </Button>
+                                <Button
+                                  asChild
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={handleCancelRename}
+                                  className="text-neutral-400 hover:text-red-500 transition-colors size-5 p-0.5"
+                                >
+                                  <XIcon className="size-4" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <span className="truncate max-w-[8rem]">{chat.title}</span>
+                            )}
                           </div>
-                          <div className="flex flex-row items-center gap-1">
-                            <div
-                              className="flex items-center justify-center cursor-pointer text-neutral-400 hover:text-white group-hover/chat-title:opacity-100 opacity-0 transition-all p-1"
-                              onClick={(e) => {
-                                handleRenameChat(user ? chat._id : chat.id, chat.title)
-                                e.stopPropagation()
-                              }}
-                            >
-                              <PencilIcon className="size-4" />
+                          
+                          {renamingChatId !== (user ? chat._id : chat.id) && (
+                            <div className="flex items-center gap-1">
+                              <div
+                                className="flex items-center justify-center cursor-pointer text-neutral-400 hover:text-white group-hover/chat-title:opacity-100 opacity-0 transition-all p-1"
+                                onClick={(e) => {
+                                  handleRenameChat(user ? chat._id : chat.id, chat.title)
+                                  e.stopPropagation()
+                                }}
+                              >
+                                <PencilIcon className="size-4" />
+                              </div>
+                              <div
+                                className="flex items-center justify-center cursor-pointer text-neutral-400 hover:text-red-500 group-hover/chat-title:opacity-100 opacity-0 transition-all p-1"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleDeleteChat(user ? chat._id : chat.id)
+                                }}
+                              >
+                                <TrashIcon className="size-4" />
+                              </div>
                             </div>
-                            <div
-                              className="flex items-center justify-center cursor-pointer text-neutral-400 hover:text-red-500 group-hover/chat-title:opacity-100 opacity-0 transition-all p-1"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleDeleteChat(user ? chat._id : chat.id)
-                              }}
-                            >
-                              <TrashIcon className="size-4" />
-                            </div>
-                          </div>
+                          )}
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                     ) : (
@@ -198,28 +251,62 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
                         <SidebarMenuButton className="flex flex-row items-center justify-between bg-transparent hover:bg-neutral-800 hover:border-accent/20 active:bg-neutral-800 text-white hover:text-white rounded-md p-2 py-5 ml-2 max-w-full w-full cursor-pointer transition-all group/chat-title">
                           <div className="flex flex-row items-center gap-1 h-full">
                             <MessageCircleIcon className="size-5 text-accent/80" />
-                            <span className="truncate max-w-[8rem]">{chat.title}</span>
+                            {renamingChatId === (user ? chat._id : chat.id) ? (
+                              <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                <input
+                                  type="text"
+                                  value={renameInput}
+                                  onChange={(e) => setRenameInput(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      handleConfirmRename()
+                                    } else if (e.key === "Escape") {
+                                      handleCancelRename()
+                                    }
+                                  }}
+                                  className="bg-transparent border border-accent/30 rounded px-1 py-0.5 text-sm focus:outline-none focus:border-accent/50"
+                                  autoFocus
+                                />
+                                <button
+                                  onClick={handleConfirmRename}
+                                  className="text-neutral-400 hover:text-white transition-colors"
+                                >
+                                  <CheckIcon className="size-4" />
+                                </button>
+                                <button
+                                  onClick={handleCancelRename}
+                                  className="text-neutral-400 hover:text-red-500 transition-colors"
+                                >
+                                  <XIcon className="size-4" />
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="truncate max-w-[8rem]">{chat.title}</span>
+                            )}
                           </div>
-                          <div className="flex flex-row items-center gap-1">
-                            <div
-                              className="flex items-center justify-center cursor-pointer text-neutral-400 hover:text-white group-hover/chat-title:opacity-100 opacity-0 transition-all p-1"
-                              onClick={(e) => {
-                                handleRenameChat(user ? chat._id : chat.id, chat.title)
-                                e.stopPropagation()
-                              }}
-                            >
-                              <PencilIcon className="size-4" />
+                          
+                          {renamingChatId !== (user ? chat._id : chat.id) && (
+                            <div className="flex items-center gap-1">
+                              <div
+                                className="flex items-center justify-center cursor-pointer text-neutral-400 hover:text-white group-hover/chat-title:opacity-100 opacity-0 transition-all p-1"
+                                onClick={(e) => {
+                                  handleRenameChat(user ? chat._id : chat.id, chat.title)
+                                  e.stopPropagation()
+                                }}
+                              >
+                                <PencilIcon className="size-4" />
+                              </div>
+                              <div
+                                className="flex items-center justify-center cursor-pointer text-neutral-400 hover:text-red-500 group-hover/chat-title:opacity-100 opacity-0 transition-all p-1"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleDeleteChat(user ? chat._id : chat.id)
+                                }}
+                              >
+                                <TrashIcon className="size-4" />
+                              </div>
                             </div>
-                            <div
-                              className="flex items-center justify-center cursor-pointer text-neutral-400 hover:text-red-500 group-hover/chat-title:opacity-100 opacity-0 transition-all p-1"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleDeleteChat(user ? chat._id : chat.id)
-                              }}
-                            >
-                              <TrashIcon className="size-4" />
-                            </div>
-                          </div>
+                          )}
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                     )
