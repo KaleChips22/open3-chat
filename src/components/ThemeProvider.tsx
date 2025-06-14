@@ -36,11 +36,11 @@ export function ThemeProvider({
   ...props
 }: ThemeProviderProps) {
   const [colorTheme, setColorTheme] = useState<ColorTheme>(
-    () => (localStorage.getItem(`${storageKey}:colorTheme`) as ColorTheme) || defaultColorTheme
+    () => (typeof window !== 'undefined' && localStorage.getItem(`${storageKey}:colorTheme`) as ColorTheme) || defaultColorTheme
   )
   const [darkMode, setDarkMode] = useState<DarkMode>(
     () => {
-      const stored = localStorage.getItem(`${storageKey}:darkMode`)
+      const stored = typeof window !== 'undefined' && localStorage.getItem(`${storageKey}:darkMode`)
       return stored ? stored === 'true' : defaultDarkMode
     }
   )
@@ -63,12 +63,16 @@ export function ThemeProvider({
   const value = {
     colorTheme,
     setColorTheme: (theme: ColorTheme) => {
-      localStorage.setItem(`${storageKey}:colorTheme`, theme)
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(`${storageKey}:colorTheme`, theme)
+      }
       setColorTheme(theme)
     },
     darkMode,
     setDarkMode: (darkMode: DarkMode) => {
-      localStorage.setItem(`${storageKey}:darkMode`, darkMode.toString())
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(`${storageKey}:darkMode`, darkMode.toString())
+      }
       setDarkMode(darkMode)
     },
   }
