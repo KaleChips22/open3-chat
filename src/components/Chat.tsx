@@ -4,7 +4,7 @@ import React from "react"
 
 import { useState, useEffect, useRef, memo } from "react"
 import { Button } from "@/components/ui/button"
-import { ArrowDownIcon, ArrowUp, CopyIcon } from "lucide-react"
+import { ArrowDownIcon, ArrowUp, CopyIcon, EditIcon, ForwardIcon, RewindIcon, TrashIcon, RotateCcwIcon } from "lucide-react"
 import { ScrollArea } from "@/components/scroll-area"
 import { useMutation, useQuery } from "convex/react"
 import { api } from "../../convex/_generated/api"
@@ -51,6 +51,9 @@ export default function Chat({ id }: { id: string }) {
   const [previousLastMessageContent, setPreviousLastMessageContent] = useState("")
 
   const [selectedModel, setSelectedModel] = useLocalStorage("open3:selectedModel", 0)
+
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
+  const [editingContent, setEditingContent] = useState("")
 
   // Load chat from localStorage if user is not authenticated
   useEffect(() => {
@@ -272,6 +275,125 @@ export default function Chat({ id }: { id: string }) {
   // Get messages based on authentication status
   const displayMessages = user ? messages : localChat?.messages
 
+  const handleEditMessage = (messageId: string) => {
+    const message = displayMessages?.find(m => m._id === messageId)
+    if (message) {
+      setEditingMessageId(messageId)
+      setEditingContent(message.content)
+    }
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editingMessageId || !editingContent.trim()) return
+    
+    if (user) {
+      // Create a new message with the edited content
+      const message = displayMessages?.find(m => m._id === editingMessageId)
+      if (message) {
+        await createMessage({
+          chatId: id as Id<"chats">,
+          content: editingContent,
+          role: message.role,
+          model: message.model,
+          parentId: message.parentId
+        })
+      }
+    } else {
+      // Handle local editing
+      const updatedMessages = localChat?.messages.map(msg =>
+        msg._id === editingMessageId ? { ...msg, content: editingContent } : msg
+      )
+      if (updatedMessages && localChat) {
+        setLocalChat({
+          title: localChat.title,
+          messages: updatedMessages
+        })
+        localStorage.setItem(`open3:chat:${id}`, JSON.stringify({
+          title: localChat.title,
+          messages: updatedMessages
+        }))
+      }
+    }
+    
+    setEditingMessageId(null)
+    setEditingContent("")
+  }
+
+  const handleDeleteMessage = async (messageId: string) => {
+    if (user) {
+      await createMessage({
+        chatId: id as Id<"chats">,
+        content: "",
+        role: "user",
+        model: "",
+        parentId: messageId as Id<"messages">
+      })
+    } else {
+      // Handle local deletion
+      const messageIndex = localChat?.messages.findIndex(m => m._id === messageId)
+      if (messageIndex !== undefined && messageIndex !== -1 && localChat) {
+        const updatedMessages = localChat.messages.slice(0, messageIndex)
+        setLocalChat({
+          title: localChat.title,
+          messages: updatedMessages
+        })
+        localStorage.setItem(`open3:chat:${id}`, JSON.stringify({
+          title: localChat.title,
+          messages: updatedMessages
+        }))
+      }
+    }
+  }
+
+  const handleRetryMessage = async (messageId: string) => {
+    const message = displayMessages?.find(m => m._id === messageId)
+    if (!message) return
+
+    if (user) {
+      // Create a new message with the same content
+      await createMessage({
+        chatId: id as Id<"chats">,
+        content: message.content,
+        role: message.role,
+        model: message.model,
+        parentId: message.parentId
+      })
+    } else if (localChat) {
+      // Handle local retry
+      const newMessage = {
+        _id: Math.random().toString(36).substring(2, 15),
+        role: message.role,
+        content: message.content,
+        timestamp: new Date().toISOString()
+      }
+      
+      const updatedMessages = [...localChat.messages, newMessage]
+      setLocalChat({
+        title: localChat.title,
+        messages: updatedMessages
+      })
+      localStorage.setItem(`open3:chat:${id}`, JSON.stringify({
+        title: localChat.title,
+        messages: updatedMessages
+      }))
+    }
+  }
+
+  const handleNavigateBranch = async (messageId: string, direction: 'forward' | 'back') => {
+    const message = displayMessages?.find(m => m._id === messageId)
+    if (!message) return
+
+    if (user) {
+      const children = message.childrenIds
+      if (children.length > 0) {
+        const targetId = direction === 'forward' ? children[0] : message.parentId
+        if (targetId !== 'root') {
+          router.push(`/chat/${id}?message=${targetId}`)
+        }
+      }
+    }
+  }
+
   return (
     <div className="h-full w-full flex flex-col bg-neutral-950 text-neutral-100 relative">
       {/* Background Effects */}
@@ -286,11 +408,50 @@ export default function Chat({ id }: { id: string }) {
               {displayMessages && displayMessages.map((message) => (
                 <div key={message._id} className="w-full">
                   {message.role === "user" ? (
-                    // User message with bubble
-                    <UserMessage message={message} />
+                    editingMessageId === message._id ? (
+                      <div className="flex justify-end">
+                        <div className="max-w-[60%] w-full">
+                          <textarea
+                            value={editingContent}
+                            onChange={(e) => setEditingContent(e.target.value)}
+                            className="w-full glassmorphic-dark text-neutral-100 placeholder:text-neutral-400 rounded-xl px-6 py-4 resize-none focus:outline-none focus:ring-0 min-h-[56px] max-h-64 overflow-y-auto scrollbar-hide focus:border-accent/50 transition-all"
+                            rows={3}
+                          />
+                          <div className="flex gap-2 mt-2 justify-end">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-neutral-400 hover:text-white"
+                              onClick={() => setEditingMessageId(null)}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-neutral-400 hover:text-white"
+                              onClick={handleSaveEdit}
+                            >
+                              Save
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <UserMessage
+                        message={message}
+                        onEdit={handleEditMessage}
+                        onDelete={handleDeleteMessage}
+                        onRetry={handleRetryMessage}
+                      />
+                    )
                   ) : (
-                    // AI message directly on background
-                    <AIMessage message={message} />
+                    <AIMessage
+                      message={message}
+                      onRetry={handleRetryMessage}
+                      onForward={() => handleNavigateBranch(message._id, 'forward')}
+                      onBack={() => handleNavigateBranch(message._id, 'back')}
+                    />
                   )}
                 </div>
               ))}
@@ -355,23 +516,61 @@ export default function Chat({ id }: { id: string }) {
   )
 }
 
-const UserMessage = ({ message }: { message: { content: string } }) => {
+const UserMessage = ({ message, onEdit, onDelete, onRetry }: { 
+  message: { content: string, _id: string },
+  onEdit: (id: string) => void,
+  onDelete: (id: string) => void,
+  onRetry: (id: string) => void
+}) => {
   return (
     <div className="flex justify-end user-message">
       <div className="max-w-[60%] bg-neutral-800 border border-accent/20 text-neutral-100 rounded-2xl px-4 py-3">
         <div className="whitespace-pre-wrap break-words text-sm leading-relaxed">
           {applyUserCodeBlocks(message.content)}
         </div>
+        <div className="flex gap-2 mt-2 justify-end">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 text-neutral-400 hover:text-white"
+            onClick={() => onRetry(message._id)}
+          >
+            <RotateCcwIcon className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 text-neutral-400 hover:text-white"
+            onClick={() => onEdit(message._id)}
+          >
+            <EditIcon className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 text-neutral-400 hover:text-red-500"
+            onClick={() => onDelete(message._id)}
+          >
+            <TrashIcon className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </div>
   )
 }
 
-const AIMessage = memo(({ message }: { message: { content: string } }) => {
+const AIMessage = memo(({ message, onRetry, onForward, onBack }: { 
+  message: { content: string, _id: string, model: string },
+  onRetry: (id: string) => void,
+  onForward: (id: string) => void,
+  onBack: (id: string) => void
+}) => {
+  const model = models.find(m => m.id === message.model)
+  
   return (
     <div className="w-full">
       <div className="whitespace-pre-wrap break-words text-sm leading-relaxed text-neutral-100 max-w-[100%] md:max-w-[80%] markdown">
-        {/* <div className="mb-1 text-accent/80 text-xs font-medium">AI Assistant</div> */}
+        <div className="mb-1 text-accent/80 text-xs font-medium">{model?.name || "AI Assistant"}</div>
         <Markdown
           remarkPlugins={[remarkGfm]}
           components={{
@@ -397,6 +596,32 @@ const AIMessage = memo(({ message }: { message: { content: string } }) => {
             }
           }}
         >{message.content}</Markdown>
+        <div className="flex gap-2 mt-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 text-neutral-400 hover:text-white"
+            onClick={() => onRetry(message._id)}
+          >
+            <RotateCcwIcon className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 text-neutral-400 hover:text-white"
+            onClick={() => onBack(message._id)}
+          >
+            <RewindIcon className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 text-neutral-400 hover:text-white"
+            onClick={() => onForward(message._id)}
+          >
+            <ForwardIcon className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </div>
   )
