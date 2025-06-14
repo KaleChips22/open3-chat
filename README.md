@@ -24,7 +24,8 @@ The backend is composed entirely of next.js server actions and convex functions
 - [X] Model selection
 - [X] Have multiple models
 - [ ] BYOK (w/ Most major carriers (OpenAI, Anthropic, etc.) maybe...) as well as OpenRouter (fs)
-- [ ] Guest Chatting
+- [X] Guest Chatting
+  - [ ] Limit amount of guest chats and/or confine to free models
 - [X] Syntax Highlighting
 - [X] Documentation
 - [ ] Chat actions (retry/delete)
@@ -36,7 +37,7 @@ The backend is composed entirely of next.js server actions and convex functions
 - [X] Authentication & Sync
 - [X] Browser Friendly
 - [X] Easy to Try
-  - [ ] Guest Chatting
+  - [X] Guest Chatting
 
 ### Actual AI Stuff / Required Features
 - [X] Let users select a model
@@ -45,7 +46,7 @@ The backend is composed entirely of next.js server actions and convex functions
 ### Other Features
 - [ ] Thinking Detials
 - [X] Syntax Highlighting
-- [ ] Guest Chatting
+- [X] Guest Chatting
 - [ ] BYOK
 - [ ] Resumable streams
 - [X] Settings Page
@@ -60,7 +61,7 @@ The backend is composed entirely of next.js server actions and convex functions
 - [ ] Light/Dark Toggle
 - [X] BYOK inputs
 - [ ] BYOK backend support
-- [ ] Code theme (?)
+- [X] Code theme (?)
 
 #### Fun dumb shit
 - [ ] Silly system prompts
@@ -102,4 +103,4 @@ The backend is composed entirely of next.js server actions and convex functions
 - [ ] Settings Page
   - [X] Themes
   - [ ] Light/Dark
-#### **Last Updated: 06/12/2025,  11:55 PM**
+#### **Last Updated: 06/13/2025,  10:39 PM**
