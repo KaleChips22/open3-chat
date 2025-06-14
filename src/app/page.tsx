@@ -1,6 +1,6 @@
 "use client"
 
-import { pushUserMessage } from "@/actions/pushUserMessage"
+import { pushLocalUserMessage, pushUserMessage } from "@/actions/pushUserMessage"
 import BackgroundEffects from "@/components/BackgroundEffects"
 import LayoutWithSidebar from "@/components/LayoutWithSidebar"
 import { Button } from "@/components/ui/button"
@@ -12,6 +12,8 @@ import { useRouter } from "next/navigation"
 import React, { useEffect, useRef, useState } from "react"
 import models from "@/models/models"
 import { useTheme } from "@/components/ThemeProvider"
+import ChatInput from "@/components/ChatInput"
+import useLocalStorage from "@/hooks/useLocalStorage"
 
 const examples: string[] = [
   "How does AI work?",
@@ -23,28 +25,10 @@ const examples: string[] = [
 const HomePage = () => {
   const { user } = useUser()
   const { openSignIn } = useClerk()
-
-  const [input, setInput] = useState("")
-  const inputRef = useRef<HTMLTextAreaElement>(null)
   const router = useRouter()
-
   const { colorTheme } = useTheme()
-
   const createChat = useMutation(api.chats.createChat)
-
-  const resizeInput = () => {
-    if (inputRef.current) {
-      inputRef.current.style.height = "auto"
-      inputRef.current.style.height = inputRef.current.scrollHeight + "px"
-    }
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (input.trim() === "") return
-
-    makeNewChat(input)
-  }
+  const [selectedModel, setSelectedModel] = useLocalStorage("open3:selectedModel", 0)
 
   const generateId = () => {
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
@@ -56,17 +40,61 @@ const HomePage = () => {
       const allLocalChatIds = JSON.parse(window.localStorage.getItem("open3:chatIds") ?? "[]")
       allLocalChatIds.push(newChatId)
       window.localStorage.setItem("open3:chatIds", JSON.stringify(allLocalChatIds))
-      window.localStorage.setItem("open3:chat:" + newChatId, JSON.stringify({
+      
+      // Initialize chat with empty messages array
+      const chatData: {
+        title: string;
+        messages: Array<{
+          role: "user" | "assistant";
+          content: string;
+          model: string;
+          timestamp?: string;
+          isComplete?: boolean;
+          _id?: string;
+        }>;
+      } = {
         title: "New Chat",
         messages: [],
-      }))
+      }
+      
+      // If there's a first message, add it
+      if (firstMessage.trim() !== "" && models[selectedModel]) {
+        const selectedModelData = models[selectedModel]
+        if (!selectedModelData) return
+
+        // Add user message
+        const userMessageId = Math.random().toString(36).substring(2, 15)
+        chatData.messages.push({
+          _id: userMessageId,
+          role: "user",
+          content: firstMessage,
+          model: selectedModelData.id,
+          timestamp: new Date().toISOString()
+        })
+
+        // Add empty assistant message that will be streamed
+        const aiMessageId = Math.random().toString(36).substring(2, 15)
+        chatData.messages.push({
+          _id: aiMessageId,
+          role: "assistant",
+          content: "",
+          model: selectedModelData.id,
+          timestamp: new Date().toISOString(),
+          isComplete: false
+        })
+      }
+      
+      // Save initial state and navigate immediately
+      window.localStorage.setItem("open3:chat:" + newChatId, JSON.stringify(chatData))
       router.push(`/chat/${newChatId}`)
       return
     }
 
     const newChat = await createChat({ clerkId: user?.id ?? "" })
     if (firstMessage.trim() !== "") {
-      pushUserMessage(newChat, firstMessage, models[2]!.id)
+      const selectedModelData = models[selectedModel]
+      if (!selectedModelData) return
+      pushUserMessage(newChat, firstMessage, selectedModelData.id)
     }
 
     router.push(`/chat/${newChat}`)
@@ -128,11 +156,7 @@ const HomePage = () => {
               <div 
                 key={index} 
                 className={`glassmorphic-dark rounded-xl p-4 border-accent/10 hover:border-accent/30 cursor-pointer transition-all hover:${colorTheme}-glow-sm duration-300`}
-                onClick={() => {
-                  setInput(example)
-                  resizeInput()
-                  inputRef.current?.focus()
-                }}
+                onClick={() => makeNewChat(example)}
                 style={{ animationDelay: `${index * 0.5}s` }}
               >
                 <p className="text-white">{example}</p>
@@ -144,35 +168,12 @@ const HomePage = () => {
 
       {/* Floating Input */}
       <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 w-full max-w-4xl px-4 text-sm sm:text-base z-10">
-        <div className="relative">
-          <textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault()
-                handleSubmit(e)
-              }
-            }}
-            placeholder="Ask anything..."
-            rows={1}
-            className="w-full glassmorphic-dark text-neutral-100 placeholder:text-neutral-400 rounded-xl px-6 py-4 pr-16 resize-none focus:outline-none focus:ring-0 min-h-[56px] max-h-64 overflow-y-auto scrollbar-hide focus:border-accent/50 transition-all"
-            style={{
-              height: "auto",
-              minHeight: "56px",
-            }}
-            ref={inputRef}
-            onInput={resizeInput}
-          />
-          <Button
-            type="submit"
-            onClick={handleSubmit}
-            disabled={!input.trim()}
-            className={`absolute right-3 bottom-3 bg-accent/20 backdrop-blur-md border border-accent/30 hover:bg-accent/30 text-neutral-100 disabled:opacity-50 rounded-lg size-9 p-0 flex items-center justify-center cursor-pointer ${colorTheme}-glow-sm`}
-          >
-            <ArrowUp className="size-4" />
-          </Button>
-        </div>
+        <ChatInput 
+          onSubmit={makeNewChat}
+          selectedModel={selectedModel}
+          onModelChange={setSelectedModel}
+          placeholder="Ask anything..."
+        />
       </div>
     </LayoutWithSidebar>
   )

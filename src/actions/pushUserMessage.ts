@@ -75,7 +75,7 @@ export async function pushUserMessage(chatId: Id<"chats">, content: string, mode
   revalidatePath(`/chat/${chatId}`)
 }
 
-export async function pushLocalUserMessage(chatId: string, content: string, modelName: string) {
+export async function* pushLocalUserMessage(chatId: string, content: string, modelName: string) {
   const aiResponse = await generateNextCompletion(
     modelName,
     [
@@ -86,16 +86,13 @@ export async function pushLocalUserMessage(chatId: string, content: string, mode
     ]
   )
 
-  const chunks: { content?: string; reasoning?: string }[] = []
   for await (const chunk of aiResponse) {
     const delta = chunk.choices[0]?.delta as Delta
     if (delta?.content || delta?.reasoning) {
-      chunks.push({
+      yield {
         content: delta?.content,
         reasoning: delta?.reasoning
-      })
+      }
     }
   }
-
-  return chunks
 }

@@ -91,7 +91,7 @@
       padding-left: 0;
     }
 
-    li::before {
+    & > li::before {
       content: '●';
     }
   }
@@ -104,10 +104,11 @@
     counter-reset: ol 0;
 
     & ul, ol {
-      padding-left: 0;
+      padding-left: 2rem;
+      counter-reset: ol 0;
     }
 
-    li::before {
+    & > li::before {
       content: counter(ol) ".";
       text-align: right;
     }
@@ -115,7 +116,7 @@
 
   li {
     position: relative;
-    counter-increment: ol;
+    counter-increment: ol;  
 
     &::before {
       content: '';
@@ -130,6 +131,14 @@
       align-items: center;
       justify-content: center;
       color: oklch(0.65 0.15 var(--hue, 300));
+    }
+
+    &:has(ul, ol)::before {
+      top: 1.375rem;
+    }
+
+    & li::before {
+      top: -2px;
     }
   }
 

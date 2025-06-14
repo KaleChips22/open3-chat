@@ -25,7 +25,7 @@ The backend is composed entirely of next.js server actions and convex functions
 - [X] Have multiple models
 - [ ] BYOK (w/ Most major carriers (OpenAI, Anthropic, etc.) maybe...) as well as OpenRouter (fs)
 - [X] Guest Chatting
-  - [ ] Limit amount of guest chats and/or confine to free models
+  - [ ] Limit guest chats to free models, unless they have their own key
 - [X] Syntax Highlighting
 - [X] Documentation
 - [ ] Chat actions (retry/delete)
@@ -33,18 +33,14 @@ The backend is composed entirely of next.js server actions and convex functions
   - [ ] Convex ftns
 
 ### Requirements
-- [X] Chat with Various LLMs
-- [X] Authentication & Sync
-- [X] Browser Friendly
-- [X] Easy to Try
-  - [X] Guest Chatting
+ - [X] **All Done!**
 
 ### Actual AI Stuff / Required Features
 - [X] Let users select a model
 - [X] Use streams to generate data live
 
 ### Other Features
-- [ ] Thinking Detials
+- [X] Reasoning Detials
 - [X] Syntax Highlighting
 - [X] Guest Chatting
 - [ ] BYOK
@@ -52,16 +48,9 @@ The backend is composed entirely of next.js server actions and convex functions
 - [X] Settings Page
 
 #### Serious Settings
-- [X] Switch Themes
-  - Purple (default)
-  - Red
-  - Pink
-  - Blue
-  - Green
 - [ ] Light/Dark Toggle
 - [X] BYOK inputs
 - [ ] BYOK backend support
-- [X] Code theme (?)
 
 #### Fun dumb shit
 - [ ] Silly system prompts
@@ -93,14 +82,28 @@ The backend is composed entirely of next.js server actions and convex functions
 - [X] Select Model
   - [X] UI Selector (soon)
   - [X] Backend selection
+- [X] Settings Page
+  - [X] Themes
+- [X] Code theme (?)
+- [X] Switch Themes
+  - Purple (default)
+  - Red
+  - Pink
+  - Blue
+  - Green
+- [X] Chat with Various LLMs
+- [X] Authentication & Sync
+- [X] Browser Friendly
+- [X] Easy to Try
+  - [X] Guest Chatting
 
 ### Doing Next
+- [ ] Add user model to convex
+  - [ ] Add custom API key
+- [ ] Add system prompts
 - [ ] Manage State in Stream **IN PROGRESS**
   - ~~**fix whatever is wrong with the freaking code blocks!!!!!!!!!!!**~~ (I can't believe i litteraly just forgot an item in the dependancy array this was killing me all night smh)
   - [X] Lock input until stream is done
-  - [ ] Distinguish between thinking and normal responses
+  - [X] Distinguish between thinking and normal responses
   - [ ] Web search integration (?)
-- [ ] Settings Page
-  - [X] Themes
-  - [ ] Light/Dark
-#### **Last Updated: 06/13/2025,  10:39 PM**
+#### **Last Updated: 06/14/2025,  01:13 PM**

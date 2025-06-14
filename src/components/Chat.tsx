@@ -9,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { useMutation, useQuery } from "convex/react"
 import { api } from "../../convex/_generated/api"
 import type { Id } from "../../convex/_generated/dataModel"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useUser } from "@clerk/nextjs"
 import { pushUserMessage, pushLocalUserMessage } from "@/actions/pushUserMessage"
 import Markdown from "react-markdown"
@@ -17,6 +17,7 @@ import remarkGfm from "remark-gfm"
 import BackgroundEffects from "./BackgroundEffects"
 import { bundledLanguages, type BundledLanguage } from 'shiki'
 import useLocalStorage from "@/hooks/useLocalStorage"
+import ChatInput from "./ChatInput"
 
 import '@/styles/markdown.css'
 import { CodeBlock } from "./CodeBlock"
@@ -37,17 +38,11 @@ export default function Chat({ id }: { id: string }) {
   // Only query Convex if user is authenticated
   const chat = useQuery(api.chats.getChat, user ? { id: id as Id<"chats"> } : "skip")
   const [localChat, setLocalChat] = useState<{ title: string, messages: any[] } | null>(null)
-
-  const { colorTheme } = useTheme()
-  
-  const createMessage = useMutation(api.messages.createMessage)
   
   // Only query messages if user is authenticated
   const messages = useQuery(api.messages.getMessagesForChat, user ? { chatId: id as Id<"chats"> } : "skip")
-  const [input, setInput] = useState("")
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLTextAreaElement>(null)
   const [lastMessageId, setLastMessageId] = useState<string | null>(null)
   const [isStreaming, setIsStreaming] = useState(false)
   const [userHasScrolled, setUserHasScrolled] = useState(false)
@@ -69,7 +64,76 @@ export default function Chat({ id }: { id: string }) {
 
     const storedChat = localStorage.getItem(`open3:chat:${id}`)
     if (storedChat) {
-      setLocalChat(JSON.parse(storedChat))
+      const parsedChat = JSON.parse(storedChat)
+      setLocalChat(parsedChat)
+
+      // Check if there's an incomplete message that needs streaming
+      const lastMessage = parsedChat.messages[parsedChat.messages.length - 1]
+      if (lastMessage && lastMessage.role === "assistant" && !lastMessage.isComplete) {
+        // Get the user message that triggered this response
+        const userMessage = parsedChat.messages[parsedChat.messages.length - 2]
+        if (userMessage && userMessage.role === "user") {
+          // Start streaming the response
+          const streamResponse = async () => {
+            const chunks = await pushLocalUserMessage(id, userMessage.content, lastMessage.model)
+            let fullResponse = ""
+            let fullReasoning = ""
+
+            for await (const chunk of chunks) {
+              if (chunk.content) {
+                fullResponse += chunk.content
+              }
+              if (chunk.reasoning) {
+                fullReasoning += chunk.reasoning
+              }
+
+              // Update the message with new content
+              const updatedMessages = parsedChat.messages.map((msg: any) =>
+                msg._id === lastMessage._id
+                  ? {
+                      ...msg,
+                      content: fullResponse,
+                      reasoning: fullReasoning
+                    }
+                  : msg
+              )
+
+              const updatedChat = {
+                ...parsedChat,
+                messages: updatedMessages
+              }
+
+              setLocalChat(updatedChat)
+              localStorage.setItem(`open3:chat:${id}`, JSON.stringify(updatedChat))
+
+              // Add a small delay between chunks to simulate streaming
+              await new Promise(resolve => setTimeout(resolve, 10))
+            }
+
+            // Mark the message as complete
+            const finalMessages = parsedChat.messages.map((msg: any) =>
+              msg._id === lastMessage._id
+                ? {
+                    ...msg,
+                    content: fullResponse,
+                    reasoning: fullReasoning,
+                    isComplete: true
+                  }
+                : msg
+            )
+
+            const finalChat = {
+              ...parsedChat,
+              messages: finalMessages
+            }
+
+            setLocalChat(finalChat)
+            localStorage.setItem(`open3:chat:${id}`, JSON.stringify(finalChat))
+          }
+
+          streamResponse()
+        }
+      }
     } else {
       // Initialize new local chat if none exists
       const newChat = {
@@ -131,20 +195,6 @@ export default function Chat({ id }: { id: string }) {
     }
   }
 
-  const resizeInput = () => {
-    if (inputRef.current) {
-      inputRef.current.style.height = "auto"
-      inputRef.current.style.height = Math.min(inputRef.current.scrollHeight, 256) + "px"
-    }
-  }
-
-  const minimizeInput = () => {
-    if (inputRef.current) {
-      inputRef.current.style.height = "auto"
-      inputRef.current.style.height = "56px"
-    }
-  }
-
   // Detect user scrolling
   useEffect(() => {
     const handleScroll = () => {
@@ -201,20 +251,15 @@ export default function Chat({ id }: { id: string }) {
     }
   }, [])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!input.trim()) return
-
+  const handleSubmit = async (message: string) => {
     if (user) {
-      pushUserMessage(id as Id<"chats">, input, models[selectedModel]!.id)
-      setInput("")
-      minimizeInput()
+      pushUserMessage(id as Id<"chats">, message, models[selectedModel]!.id)
     } else {
       // Handle unauthenticated user message
       const newMessage = {
         _id: Math.random().toString(36).substring(2, 15),
         role: "user",
-        content: input,
+        content: message,
         timestamp: new Date().toISOString()
       }
       
@@ -226,9 +271,6 @@ export default function Chat({ id }: { id: string }) {
       
       setLocalChat(updatedChat)
       localStorage.setItem(`open3:chat:${id}`, JSON.stringify(updatedChat))
-
-      setInput("")
-      minimizeInput()
 
       // Create AI message placeholder
       const aiMessageId = Math.random().toString(36).substring(2, 15)
@@ -252,12 +294,12 @@ export default function Chat({ id }: { id: string }) {
       localStorage.setItem(`open3:chat:${id}`, JSON.stringify(chatWithAiMessage))
 
       // Get AI response chunks
-      const chunks = await pushLocalUserMessage(id, input, models[selectedModel]!.id)
+      const chunks = await pushLocalUserMessage(id, message, models[selectedModel]!.id)
       
       // Process chunks with a small delay to simulate streaming
       let fullResponse = ""
       let fullReasoning = ""
-      for (const chunk of chunks) {
+      for await (const chunk of chunks) {
         if (chunk.content) {
           fullResponse += chunk.content
         }
@@ -291,7 +333,7 @@ export default function Chat({ id }: { id: string }) {
       // Mark the message as complete after all chunks are processed
       const finalMessages = chatWithAiMessage.messages.map(msg => 
         msg._id === aiMessageId 
-          ? { ...msg, isComplete: true, content: fullResponse }
+          ? { ...msg, isComplete: true, content: fullResponse, reasoning: fullReasoning }
           : msg
       )
       
@@ -345,63 +387,12 @@ export default function Chat({ id }: { id: string }) {
 
         {/* Floating Input */}
         <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 w-full max-w-4xl px-4 text-sm sm:text-base">
-          <div className="relative flex flex-col-reverse items-start justify-between gap-2">
-            <div>
-              <Select value={models[selectedModel]!.id} onValueChange={(value) => setSelectedModel(models.findIndex((model) => model.id === value))}>
-                <SelectTrigger className="bg-transparent border border-neutral-800 hover:bg-neutral-800 text-neutral-100 rounded-xl px-4 py-2 transition-all cursor-pointer">
-                  <SelectValue placeholder="Select a model" />
-                </SelectTrigger>
-                <SelectContent className="bg-black/20 backdrop-blur-md border border-neutral-800 rounded-xl">
-                  {models.map((model, index) => (
-                    <SelectItem key={index} value={model.id} className="text-neutral-100 rounded-lg cursor-pointer active:bg-neutral-800">
-                      <div className="flex flex-row items-center gap-2 justify-between">
-                        <Image src={model.icon} alt={model.name} className="size-4 text-white" />
-                        {model.name}
-                      </div>
-                      {/* Show features in dropdown menu */}
-                      {model.features && (
-                        <div className="flex flex-row items-center gap-2">
-                          {model.features.map((feature) => (
-                            <div key={feature} className="text-xs text-neutral-400">
-                              {featureIcons[feature as keyof typeof featureIcons]}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault()
-                  handleSubmit(e)
-                }
-              }}
-              placeholder="Type your message..."
-              rows={1}
-              className="w-full glassmorphic-dark text-neutral-100 placeholder:text-neutral-400 rounded-xl px-6 py-4 pr-16 resize-none focus:outline-none focus:ring-0 min-h-[56px] max-h-64 overflow-y-auto scrollbar-hide focus:border-accent/50 transition-all"
-              style={{
-                height: "auto",
-                minHeight: "56px",
-              }}
-              ref={inputRef}
-              onInput={resizeInput}
-            />
-            <Button
-              type="submit"
-              onClick={handleSubmit}
-              disabled={!input.trim() || isStreaming}
-              className={`absolute right-3 top-3 bg-accent/20 backdrop-blur-md border border-accent/30 hover:bg-accent/30 text-neutral-100 disabled:opacity-50 rounded-lg size-9 p-0 flex items-center justify-center cursor-pointer ${colorTheme}-glow-sm`}
-            >
-              <ArrowUp className="size-4" />
-            </Button>
-          </div>
+          <ChatInput 
+            onSubmit={handleSubmit}
+            selectedModel={selectedModel}
+            onModelChange={setSelectedModel}
+            disabled={isStreaming}
+          />
         </div>
 
         <div className="fixed bottom-6 right-6 z-10">
