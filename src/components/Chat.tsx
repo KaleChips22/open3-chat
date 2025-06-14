@@ -64,76 +64,7 @@ export default function Chat({ id }: { id: string }) {
 
     const storedChat = localStorage.getItem(`open3:chat:${id}`)
     if (storedChat) {
-      const parsedChat = JSON.parse(storedChat)
-      setLocalChat(parsedChat)
-
-      // Check if there's an incomplete message that needs streaming
-      const lastMessage = parsedChat.messages[parsedChat.messages.length - 1]
-      if (lastMessage && lastMessage.role === "assistant" && !lastMessage.isComplete) {
-        // Get the user message that triggered this response
-        const userMessage = parsedChat.messages[parsedChat.messages.length - 2]
-        if (userMessage && userMessage.role === "user") {
-          // Start streaming the response
-          const streamResponse = async () => {
-            const chunks = await pushLocalUserMessage(id, userMessage.content, lastMessage.model)
-            let fullResponse = ""
-            let fullReasoning = ""
-
-            for await (const chunk of chunks) {
-              if (chunk.content) {
-                fullResponse += chunk.content
-              }
-              if (chunk.reasoning) {
-                fullReasoning += chunk.reasoning
-              }
-
-              // Update the message with new content
-              const updatedMessages = parsedChat.messages.map((msg: any) =>
-                msg._id === lastMessage._id
-                  ? {
-                      ...msg,
-                      content: fullResponse,
-                      reasoning: fullReasoning
-                    }
-                  : msg
-              )
-
-              const updatedChat = {
-                ...parsedChat,
-                messages: updatedMessages
-              }
-
-              setLocalChat(updatedChat)
-              localStorage.setItem(`open3:chat:${id}`, JSON.stringify(updatedChat))
-
-              // Add a small delay between chunks to simulate streaming
-              await new Promise(resolve => setTimeout(resolve, 10))
-            }
-
-            // Mark the message as complete
-            const finalMessages = parsedChat.messages.map((msg: any) =>
-              msg._id === lastMessage._id
-                ? {
-                    ...msg,
-                    content: fullResponse,
-                    reasoning: fullReasoning,
-                    isComplete: true
-                  }
-                : msg
-            )
-
-            const finalChat = {
-              ...parsedChat,
-              messages: finalMessages
-            }
-
-            setLocalChat(finalChat)
-            localStorage.setItem(`open3:chat:${id}`, JSON.stringify(finalChat))
-          }
-
-          streamResponse()
-        }
-      }
+      setLocalChat(JSON.parse(storedChat))
     } else {
       // Initialize new local chat if none exists
       const newChat = {
@@ -187,6 +118,75 @@ export default function Chat({ id }: { id: string }) {
       return () => clearInterval(checkInterval)
     }
   }, [messages, localChat, lastMessageId, user])
+
+  // Handle streaming for new chats with empty AI messages
+  useEffect(() => {
+    if (!localChat?.messages || localChat.messages.length === 0) return
+    
+    const lastMessage = localChat.messages[localChat.messages.length - 1]
+    if (lastMessage.role === "assistant" && !lastMessage.isComplete && lastMessage.content === "") {
+      const previousMessage = localChat.messages[localChat.messages.length - 2]
+      if (!previousMessage || previousMessage.role !== "user") return
+
+      // Start streaming the response
+      const streamResponse = async () => {
+        setIsStreaming(true)
+        const chunks = await pushLocalUserMessage(id, previousMessage.content, lastMessage.model)
+        
+        let fullResponse = ""
+        let fullReasoning = ""
+        
+        for await (const chunk of chunks) {
+          if (chunk.content) {
+            fullResponse += chunk.content
+          }
+          if (chunk.reasoning) {
+            fullReasoning += chunk.reasoning
+          }
+          
+          // Update the AI message with new content
+          const updatedMessages = localChat.messages.map(msg => 
+            msg._id === lastMessage._id 
+              ? { 
+                  ...msg, 
+                  content: fullResponse,
+                  reasoning: fullReasoning
+                }
+              : msg
+          )
+          
+          const updatedChat = {
+            ...localChat,
+            messages: updatedMessages
+          }
+          
+          setLocalChat(updatedChat)
+          localStorage.setItem(`open3:chat:${id}`, JSON.stringify(updatedChat))
+          
+          // Add a small delay between chunks to simulate streaming
+          await new Promise(resolve => setTimeout(resolve, 10))
+        }
+
+        // Mark the message as complete
+        const finalMessages = localChat.messages.map(msg => 
+          msg._id === lastMessage._id 
+            ? { ...msg, isComplete: true, content: fullResponse, reasoning: fullReasoning }
+            : msg
+        )
+        
+        const finalChat = {
+          ...localChat,
+          messages: finalMessages
+        }
+        
+        setLocalChat(finalChat)
+        localStorage.setItem(`open3:chat:${id}`, JSON.stringify(finalChat))
+        setIsStreaming(false)
+      }
+
+      streamResponse()
+    }
+  }, [localChat, id])
 
   // Auto-scroll to bottom when new messages arrive or during streaming
   const scrollToBottom = () => {

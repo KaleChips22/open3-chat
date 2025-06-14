@@ -49,15 +49,15 @@ const HomePage = () => {
           content: string;
           model: string;
           timestamp?: string;
-          isComplete?: boolean;
           _id?: string;
+          isComplete?: boolean;
         }>;
       } = {
         title: "New Chat",
         messages: [],
       }
       
-      // If there's a first message, add it
+      // If there's a first message, add it to the chat
       if (firstMessage.trim() !== "" && models[selectedModel]) {
         const selectedModelData = models[selectedModel]
         if (!selectedModelData) return
@@ -72,7 +72,7 @@ const HomePage = () => {
           timestamp: new Date().toISOString()
         })
 
-        // Add empty assistant message that will be streamed
+        // Add empty AI message placeholder
         const aiMessageId = Math.random().toString(36).substring(2, 15)
         chatData.messages.push({
           _id: aiMessageId,
@@ -84,14 +84,13 @@ const HomePage = () => {
         })
       }
       
-      // Save initial state and navigate immediately
       window.localStorage.setItem("open3:chat:" + newChatId, JSON.stringify(chatData))
       router.push(`/chat/${newChatId}`)
       return
     }
 
     const newChat = await createChat({ clerkId: user?.id ?? "" })
-    if (firstMessage.trim() !== "") {
+    if (firstMessage.trim() !== "" && models[selectedModel]) {
       const selectedModelData = models[selectedModel]
       if (!selectedModelData) return
       pushUserMessage(newChat, firstMessage, selectedModelData.id)
