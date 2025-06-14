@@ -4,7 +4,7 @@ import { pushUserMessage } from "@/actions/pushUserMessage"
 import BackgroundEffects from "@/components/BackgroundEffects"
 import LayoutWithSidebar from "@/components/LayoutWithSidebar"
 import { Button } from "@/components/ui/button"
-import { useUser } from "@clerk/nextjs"
+import { useClerk, useUser } from "@clerk/nextjs"
 import { api } from "../../convex/_generated/api"
 import { useMutation, useQuery } from "convex/react"
 import { ArrowRight, ArrowUp, BrainCircuit, Sparkles, SparklesIcon } from "lucide-react"
@@ -22,6 +22,7 @@ const examples: string[] = [
 
 const HomePage = () => {
   const { user } = useUser()
+  const { openSignIn } = useClerk()
 
   const [input, setInput] = useState("")
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -29,9 +30,6 @@ const HomePage = () => {
 
   const { colorTheme } = useTheme()
 
-  const chats = useQuery(api.chats.getMyChats, {
-    clerkId: user?.id ?? ""
-  })
   const createChat = useMutation(api.chats.createChat)
 
   const resizeInput = () => {
@@ -48,8 +46,23 @@ const HomePage = () => {
     makeNewChat(input)
   }
 
+  const generateId = () => {
+    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+  }
+
   const makeNewChat = async (firstMessage: string = "") => {
-    if (!user?.id) return
+    if (!user?.id) {
+      const newChatId = generateId()
+      const allLocalChatIds = JSON.parse(window.localStorage.getItem("open3:chatIds") ?? "[]")
+      allLocalChatIds.push(newChatId)
+      window.localStorage.setItem("open3:chatIds", JSON.stringify(allLocalChatIds))
+      window.localStorage.setItem("open3:chat:" + newChatId, JSON.stringify({
+        title: "New Chat",
+        messages: [],
+      }))
+      router.push(`/chat/${newChatId}`)
+      return
+    }
 
     const newChat = await createChat({ clerkId: user?.id ?? "" })
     if (firstMessage.trim() !== "") {
@@ -84,15 +97,26 @@ const HomePage = () => {
           </p>
           
           {!user && (
-            <Button 
-              variant="purple" 
-              size="lg" 
-              className="mt-2 text-lg px-8 py-6 h-auto animate-shine"
-              onClick={() => document.querySelector('[data-clerk-sign-in]')?.dispatchEvent(new Event('click', { bubbles: true }))}
-            >
-              Get Started
-              <ArrowRight className="ml-2" />
-            </Button>
+            <div className="flex flex-col gap-4 items-center justify-center">
+              <Button 
+                variant="purple" 
+                size="lg" 
+                className="mt-2 text-lg px-8 py-4 h-auto cursor-pointer w-full"
+                onClick={() => makeNewChat()}
+              >
+                Get Started
+                <ArrowRight className="ml-2" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="lg" 
+                className="text-lg px-8 py-2 h-auto cursor-pointer border-neutral-700 text-neutral-300 hover:border-neutral-600 hover:bg-neutral-100/5 hover:text-neutral-100 w-full"
+                onClick={() => openSignIn()}
+              >
+                Sign In
+                <ArrowRight className="ml-2" />
+              </Button>
+            </div>
           )}
         </div>
         

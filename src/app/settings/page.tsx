@@ -12,6 +12,9 @@ import { Button } from '@/components/ui/button'
 import useLocalStorage from '@/hooks/useLocalStorage'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useTheme } from '@/components/ThemeProvider'
+import { useClerk, useUser } from '@clerk/nextjs'
+import { ArrowLeftIcon, LogOutIcon } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 const themes = [
   {
@@ -42,11 +45,16 @@ const themes = [
 ]
 
 const SettingsPage = () => {
-  const { colorTheme, setColorTheme, darkMode, setDarkMode } = useTheme()
+  const { colorTheme, setColorTheme } = useTheme()
   const [codeTheme, setCodeTheme] = useLocalStorage("open3:codeTheme", "dark-plus")
   const [stupidMode, setStupidMode] = useLocalStorage("open3:stupidMode", false)
   const [brainrotMode, setBrainrotMode] = useLocalStorage("open3:brainrotMode", false)
   const [customPrompt, setCustomPrompt] = useLocalStorage("open3:customPrompt", false)
+
+  const { user, isSignedIn } = useUser()
+  const { signOut } = useClerk()
+
+  const router = useRouter()
 
   return (
     <LayoutWithSidebar currentChatId={null}>
@@ -54,7 +62,51 @@ const SettingsPage = () => {
         <BackgroundEffects variant="dark" />
 
         <div className="container max-w-4xl mx-auto py-8 px-4 z-10">
-          <h1 className="text-3xl font-bold mb-8 text-white">Settings</h1>
+          <div className="flex flex-row items-center justify-between mb-8">
+            <h1 className="text-3xl font-bold text-white">Settings</h1>
+            <Button variant="link" className="text-neutral-100 hover:text-neutral-100 cursor-pointer transition-all duration-300" onClick={() => router.back()}>
+              <ArrowLeftIcon className="w-4 h-4 mr-2" />
+              Back
+            </Button>
+          </div>
+
+          {/* Account Settings */ }
+          {isSignedIn && (
+            <Card className="mb-6 bg-black/20 backdrop-blur-md border border-neutral-800">
+              <CardHeader>
+                <CardTitle className="text-white text-2xl font-bold">Account</CardTitle>
+                <CardDescription className='text-neutral-400 text-md'>Manage your account settings</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 gap-4 w-full lg:grid-cols-2">
+                  <div className="flex items-center justify-between w-full">
+                    <div className="space-y-0.5">
+                      <Label className='text-neutral-100 text-md'>Email</Label>
+                      <p className="text-sm text-neutral-400">{user?.emailAddresses[0]?.emailAddress}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between w-full">
+                    <div className="space-y-0.5">
+                      <Label className='text-neutral-100 text-md'>Name</Label>
+                      <p className="text-sm text-neutral-400">{user?.firstName} {user?.lastName}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between w-full">
+                    <div className="space-y-0.5">
+                      <Label className='text-neutral-100 text-md'>Username</Label>
+                      <p className="text-sm text-neutral-400">{user?.username}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between w-full">
+                  <Button variant="outline" className="bg-neutral-800 border border-neutral-700 rounded-md px-3 py-2 text-neutral-100 hover:border-neutral-600 hover:text-neutral-100 cursor-pointer transition-all duration-300" onClick={() => signOut()} size="lg">
+                    <LogOutIcon className="w-4 h-4 mr-2" />
+                    Sign Out
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Theme Selection */}
           <Card className="mb-6 bg-black/20 backdrop-blur-md border border-neutral-800">
@@ -87,13 +139,13 @@ const SettingsPage = () => {
               <CardDescription className='text-neutral-400 text-md'>Customize how Open3 Chat looks</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
+              {/* <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label className='text-neutral-100 text-md'>Dark Mode</Label>
                   <p className="text-sm text-neutral-400">Toggle dark mode on or off</p>
                 </div>
                 <Switch checked={darkMode} onCheckedChange={setDarkMode} />
-              </div>
+              </div> */}
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label className='text-neutral-100 text-md'>Code Theme</Label>

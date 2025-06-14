@@ -14,26 +14,52 @@ import { useTheme } from './ThemeProvider'
 
 const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactNode, currentChatId?: Id<"chats"> | null }) => {
   const router = useRouter()
-  const { user } = useUser()
+  const { user, isLoaded } = useUser()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
+  const [localChats, setLocalChats] = useState<{ id: string, title: string }[]>([])
 
   const { colorTheme } = useTheme()
 
-  const chats = useQuery(api.chats.getMyChats, { clerkId: user?.id || "" })
+  // Only query Convex if user is authenticated
+  const chats = useQuery(api.chats.getMyChats, user ? { clerkId: user.id } : "skip")
   const newChat = useMutation(api.chats.createChat)
   const deleteChat = useMutation(api.chats.deleteChat)
   const renameChat = useMutation(api.chats.renameChat)
 
   const [chatFound, setChatFound] = useState(false)
 
+  // Load local chats for unauthenticated users
   useEffect(() => {
-    if (chats && chats.length > 0 && currentChatId && chats.find((chat) => chat._id === currentChatId)) {
-      setChatFound(true)
+    if (!isLoaded) return
+    if (user) return // Skip if user is authenticated
+
+    const chatIds = JSON.parse(localStorage.getItem("open3:chatIds") ?? "[]")
+    const loadedChats = chatIds.map((id: string) => {
+      const chatData = JSON.parse(localStorage.getItem(`open3:chat:${id}`) ?? "{}")
+      return {
+        id,
+        title: chatData.title || "New Chat"
+      }
+    })
+    setLocalChats(loadedChats)
+  }, [isLoaded, user])
+
+  useEffect(() => {
+    if (user) {
+      if (chats && chats.length > 0 && currentChatId && chats.find((chat) => chat._id === currentChatId)) {
+        setChatFound(true)
+      } else {
+        setChatFound(false)
+      }
     } else {
-      setChatFound(false)
+      if (localChats && localChats.length > 0 && currentChatId && localChats.find((chat) => chat.id === currentChatId)) {
+        setChatFound(true)
+      } else {
+        setChatFound(false)
+      }
     }
-  }, [chats, currentChatId])
+  }, [chats, localChats, currentChatId, user])
 
   // Check if we're on mobile and close sidebar automatically
   useEffect(() => {
@@ -55,18 +81,62 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
   }, [])
 
   const makeNewChat = async () => {
-    if (!user) {
-      return
+    if (user) {
+      const newId = await newChat({ clerkId: user.id })
+      router.push(`/chat/${newId}`)
+    } else {
+      const newId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+      const allLocalChatIds = JSON.parse(localStorage.getItem("open3:chatIds") ?? "[]")
+      allLocalChatIds.push(newId)
+      localStorage.setItem("open3:chatIds", JSON.stringify(allLocalChatIds))
+      localStorage.setItem(`open3:chat:${newId}`, JSON.stringify({
+        title: "New Chat",
+        messages: []
+      }))
+      router.push(`/chat/${newId}`)
     }
-
-    const newId = await newChat({ clerkId: user.id })
-    router.push(`/chat/${newId}`)
     
     // Auto-close sidebar on mobile after navigation
     if (isMobile) {
       setSidebarOpen(false)
     }
   }
+
+  const handleRenameChat = (chatId: string, currentTitle: string) => {
+    if (user) {
+      renameChat({
+        id: chatId as Id<"chats">,
+        name: prompt("Rename chat", currentTitle)!
+      })
+    } else {
+      const newTitle = prompt("Rename chat", currentTitle)
+      if (newTitle) {
+        const chatData = JSON.parse(localStorage.getItem(`open3:chat:${chatId}`) ?? "{}")
+        chatData.title = newTitle
+        localStorage.setItem(`open3:chat:${chatId}`, JSON.stringify(chatData))
+        setLocalChats(chats => chats.map(chat => 
+          chat.id === chatId ? { ...chat, title: newTitle } : chat
+        ))
+      }
+    }
+  }
+
+  const handleDeleteChat = (chatId: string) => {
+    if (user) {
+      deleteChat({ id: chatId as Id<"chats"> })
+      router.push("/")
+    } else {
+      const allLocalChatIds = JSON.parse(localStorage.getItem("open3:chatIds") ?? "[]")
+      const updatedChatIds = allLocalChatIds.filter((id: string) => id !== chatId)
+      localStorage.setItem("open3:chatIds", JSON.stringify(updatedChatIds))
+      localStorage.removeItem(`open3:chat:${chatId}`)
+      setLocalChats(chats => chats.filter(chat => chat.id !== chatId))
+      router.push("/")
+    }
+  }
+
+  // Get chats based on authentication status
+  const displayChats = user ? chats : localChats
 
   return (
     <div className="h-screen w-full bg-neutral-950 overflow-x-hidden">
@@ -83,10 +153,10 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
               <SidebarGroup className="flex flex-col mt-4 gap-1">
                 <SidebarGroupLabel className="text-white text-lg font-semibold px-4">My Chats</SidebarGroupLabel>
                 <SidebarGroupContent className="flex flex-col gap-2">
-                  {chats && chats.length > 0 ? chats.map((chat) => (
-                    currentChatId === chat._id ? (
-                      <SidebarMenuItem key={chat._id} className="flex flex-row items-center gap-2" onClick={() => {
-                        router.push(`/chat/${chat._id}`)
+                  {displayChats && displayChats.length > 0 ? displayChats.map((chat) => (
+                    currentChatId === (user ? chat._id : chat.id) ? (
+                      <SidebarMenuItem key={user ? chat._id : chat.id} className="flex flex-row items-center gap-2" onClick={() => {
+                        router.push(`/chat/${user ? chat._id : chat.id}`)
                         if (isMobile) {
                           setSidebarOpen(false)
                         }
@@ -96,14 +166,11 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
                             <MessageCircleIcon className="size-5 text-accent/80" />
                             <span className="truncate max-w-[8rem]">{chat.title}</span>
                           </div>
-                          <div className="flex flex-row items-center justify-end h-full">
+                          <div className="flex flex-row items-center gap-1">
                             <div
                               className="flex items-center justify-center cursor-pointer text-neutral-400 hover:text-white group-hover/chat-title:opacity-100 opacity-0 transition-all p-1"
                               onClick={(e) => {
-                                renameChat({
-                                  id: chat._id,
-                                  name: prompt("Rename chat", chat.title)!
-                                })
+                                handleRenameChat(user ? chat._id : chat.id, chat.title)
                                 e.stopPropagation()
                               }}
                             >
@@ -113,8 +180,7 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
                               className="flex items-center justify-center cursor-pointer text-neutral-400 hover:text-red-500 group-hover/chat-title:opacity-100 opacity-0 transition-all p-1"
                               onClick={(e) => {
                                 e.stopPropagation()
-                                deleteChat({ id: chat._id })
-                                router.push("/")
+                                handleDeleteChat(user ? chat._id : chat.id)
                               }}
                             >
                               <TrashIcon className="size-4" />
@@ -123,8 +189,8 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                     ) : (
-                      <SidebarMenuItem key={chat._id} className="flex flex-row items-center gap-2 group" onClick={() => {
-                        router.push(`/chat/${chat._id}`)
+                      <SidebarMenuItem key={user ? chat._id : chat.id} className="flex flex-row items-center gap-2 group" onClick={() => {
+                        router.push(`/chat/${user ? chat._id : chat.id}`)
                         if (isMobile) {
                           setSidebarOpen(false)
                         }
@@ -134,14 +200,11 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
                             <MessageCircleIcon className="size-5 text-accent/80" />
                             <span className="truncate max-w-[8rem]">{chat.title}</span>
                           </div>
-                          <div className="flex flex-row items-center justify-end h-full">
+                          <div className="flex flex-row items-center gap-1">
                             <div
                               className="flex items-center justify-center cursor-pointer text-neutral-400 hover:text-white group-hover/chat-title:opacity-100 opacity-0 transition-all p-1"
                               onClick={(e) => {
-                                renameChat({
-                                  id: chat._id,
-                                  name: prompt("Rename chat", chat.title)!
-                                })
+                                handleRenameChat(user ? chat._id : chat.id, chat.title)
                                 e.stopPropagation()
                               }}
                             >
@@ -151,7 +214,7 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
                               className="flex items-center justify-center cursor-pointer text-neutral-400 hover:text-red-500 group-hover/chat-title:opacity-100 opacity-0 transition-all p-1"
                               onClick={(e) => {
                                 e.stopPropagation()
-                                deleteChat({ id: chat._id })
+                                handleDeleteChat(user ? chat._id : chat.id)
                               }}
                             >
                               <TrashIcon className="size-4" />
@@ -177,7 +240,7 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
                 </SidebarGroupContent>
               </SidebarGroup>
             </SidebarContent>
-            <SidebarFooter className="bg-neutral-950 border-t border-neutral-700/50 text-white p-4">
+            <SidebarFooter className="bg-neutral-950 border-t border-neutral-700/50 p-4">
               <SignedOut>
                 <SignInButton mode="modal">
                   <div className="flex flex-row items-center gap-2 justify-center cursor-pointer w-full hover:text-accent transition-colors">
@@ -188,19 +251,6 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
               </SignedOut>
               <SignedIn>
                 <div className="flex flex-row items-center gap-2 justify-center cursor-pointer w-full relative overflow-hidden">
-                  {/* <UserButton showName={true} appearance={{
-                    variables: {
-                      fontSize: '1rem',
-                      fontWeight: {
-                        medium: 300,
-                      }
-                    },
-                    elements: {
-                      userButtonBox: {
-                        padding: '0 2rem',
-                      }
-                    }
-                  }} /> */}
                   <Link href="/settings" className="flex flex-row items-center gap-2 justify-center cursor-pointer w-full transition-colors">
                     <span>{user?.fullName}</span>
                     <img src={user?.imageUrl} alt="User" className="size-8 rounded-full" />

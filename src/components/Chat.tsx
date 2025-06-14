@@ -4,21 +4,19 @@ import React from "react"
 
 import { useState, useEffect, useRef, memo } from "react"
 import { Button } from "@/components/ui/button"
-import { ArrowUp, CopyIcon } from "lucide-react"
+import { ArrowDownIcon, ArrowUp, CopyIcon } from "lucide-react"
 import { ScrollArea } from "@/components/scroll-area"
 import { useMutation, useQuery } from "convex/react"
 import { api } from "../../convex/_generated/api"
 import type { Id } from "../../convex/_generated/dataModel"
 import { useRouter } from "next/navigation"
 import { useUser } from "@clerk/nextjs"
-import { pushUserMessage } from "@/actions/pushUserMessage"
+import { pushUserMessage, pushLocalUserMessage } from "@/actions/pushUserMessage"
 import Markdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import BackgroundEffects from "./BackgroundEffects"
-import { type BundledLanguage } from 'shiki'
+import { bundledLanguages, type BundledLanguage } from 'shiki'
 import useLocalStorage from "@/hooks/useLocalStorage"
-
-// import { highlight } from "remark-sugar-high"
 
 import '@/styles/markdown.css'
 import { CodeBlock } from "./CodeBlock"
@@ -32,13 +30,16 @@ export default function Chat({ id }: { id: string }) {
 
   const { user, isLoaded } = useUser()
 
-  const chat = useQuery(api.chats.getChat, { id: id as Id<"chats"> })
+  // Only query Convex if user is authenticated
+  const chat = useQuery(api.chats.getChat, user ? { id: id as Id<"chats"> } : "skip")
+  const [localChat, setLocalChat] = useState<{ title: string, messages: any[] } | null>(null)
 
   const { colorTheme } = useTheme()
   
   const createMessage = useMutation(api.messages.createMessage)
   
-  const messages = useQuery(api.messages.getMessagesForChat, { chatId: id as Id<"chats"> })
+  // Only query messages if user is authenticated
+  const messages = useQuery(api.messages.getMessagesForChat, user ? { chatId: id as Id<"chats"> } : "skip")
   const [input, setInput] = useState("")
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -51,22 +52,42 @@ export default function Chat({ id }: { id: string }) {
 
   const [selectedModel, setSelectedModel] = useLocalStorage("open3:selectedModel", 0)
 
+  // Load chat from localStorage if user is not authenticated
   useEffect(() => {
-    if (!chat) return
+    if (!isLoaded) return
+    if (user) return // Skip if user is authenticated
+
+    const storedChat = localStorage.getItem(`open3:chat:${id}`)
+    if (storedChat) {
+      setLocalChat(JSON.parse(storedChat))
+    } else {
+      // Initialize new local chat if none exists
+      const newChat = {
+        title: "New Chat",
+        messages: []
+      }
+      setLocalChat(newChat)
+      localStorage.setItem(`open3:chat:${id}`, JSON.stringify(newChat))
+    }
+  }, [isLoaded, user, id])
+
+  useEffect(() => {
+    if (!chat && !localChat) return
     
-    document.title = `${chat.title} - Open3 Chat`
-  }, [chat])
+    document.title = `${(chat?.title || localChat?.title || "New Chat")} - Open3 Chat`
+  }, [chat, localChat])
 
   useEffect(() => {
     if (!isLoaded) return
-    if (!user || chat && chat.clerkId !== user.id) return router.push("/")
+    if (user && chat && chat.clerkId !== user.id) return router.push("/")
   }, [user, isLoaded, chat])
 
   // Track when streaming starts and ends
   useEffect(() => {
-    if (!messages || messages.length === 0) return
+    const currentMessages = user ? messages : localChat?.messages
+    if (!currentMessages || currentMessages.length === 0) return
     
-    const currentLastMessage = messages[messages.length - 1]
+    const currentLastMessage = currentMessages[currentMessages.length - 1]
     
     // If the last message has changed and it's from the assistant
     if (currentLastMessage._id !== lastMessageId && currentLastMessage.role === "assistant") {
@@ -75,7 +96,7 @@ export default function Chat({ id }: { id: string }) {
       
       // Set up polling to check if the message content has stopped changing
       const checkInterval = setInterval(() => {
-        const updatedMessages = messages
+        const updatedMessages = user ? messages : localChat?.messages
         if (updatedMessages && updatedMessages.length > 0) {
           const latestMessage = updatedMessages[updatedMessages.length - 1]
           
@@ -91,7 +112,7 @@ export default function Chat({ id }: { id: string }) {
       
       return () => clearInterval(checkInterval)
     }
-  }, [messages, lastMessageId])
+  }, [messages, localChat, lastMessageId, user])
 
   // Auto-scroll to bottom when new messages arrive or during streaming
   const scrollToBottom = () => {
@@ -174,11 +195,82 @@ export default function Chat({ id }: { id: string }) {
     e.preventDefault()
     if (!input.trim()) return
 
-    pushUserMessage(id as Id<"chats">, input, models[selectedModel]!.id)
+    if (user) {
+      pushUserMessage(id as Id<"chats">, input, models[selectedModel]!.id)
+      setInput("")
+      minimizeInput()
+    } else {
+      // Handle unauthenticated user message
+      const newMessage = {
+        _id: Math.random().toString(36).substring(2, 15),
+        role: "user",
+        content: input,
+        timestamp: new Date().toISOString()
+      }
+      
+      // Add user message to chat
+      const updatedChat = {
+        title: localChat?.title || "New Chat",
+        messages: [...(localChat?.messages || []), newMessage]
+      }
+      
+      setLocalChat(updatedChat)
+      localStorage.setItem(`open3:chat:${id}`, JSON.stringify(updatedChat))
+
+      setInput("")
+      minimizeInput()
+
+      // Create AI message placeholder
+      const aiMessageId = Math.random().toString(36).substring(2, 15)
+      const aiMessage = {
+        _id: aiMessageId,
+        role: "assistant",
+        content: "",
+        timestamp: new Date().toISOString()
+      }
+
+      // Add empty AI message to chat
+      const chatWithAiMessage = {
+        ...updatedChat,
+        messages: [...updatedChat.messages, aiMessage]
+      }
+      
+      setLocalChat(chatWithAiMessage)
+      localStorage.setItem(`open3:chat:${id}`, JSON.stringify(chatWithAiMessage))
+
+      // Get AI response chunks
+      const chunks = await pushLocalUserMessage(id, input, models[selectedModel]!.id)
+      
+      // Process chunks with a small delay to simulate streaming
+      let fullResponse = ""
+      for (const chunk of chunks) {
+        fullResponse += chunk
+        
+        // Update AI message with new content
+        const updatedMessages = chatWithAiMessage.messages.map(msg => 
+          msg._id === aiMessageId 
+            ? { ...msg, content: fullResponse }
+            : msg
+        )
+        
+        const updatedChatWithResponse = {
+          ...chatWithAiMessage,
+          messages: updatedMessages
+        }
+        
+        setLocalChat(updatedChatWithResponse)
+        localStorage.setItem(`open3:chat:${id}`, JSON.stringify(updatedChatWithResponse))
+        
+        // Add a small delay between chunks to simulate streaming
+        await new Promise(resolve => setTimeout(resolve, 10))
+      }
+    }
+
     setUserHasScrolled(false) // Reset scroll position when sending a message
-    setInput("")
-    minimizeInput()
   }
+
+  // Get messages based on authentication status
+  const displayMessages = user ? messages : localChat?.messages
 
   return (
     <div className="h-full w-full flex flex-col bg-neutral-950 text-neutral-100 relative">
@@ -191,7 +283,7 @@ export default function Chat({ id }: { id: string }) {
         <div className="h-full">
           <ScrollArea className="min-h-screen h-full p-6" ref={scrollAreaRef} type="hidden">
             <div className="max-w-4xl mx-auto space-y-6">
-              {messages && messages.map((message) => (
+              {displayMessages && displayMessages.map((message) => (
                 <div key={message._id} className="w-full">
                   {message.role === "user" ? (
                     // User message with bubble
@@ -217,7 +309,7 @@ export default function Chat({ id }: { id: string }) {
                 </SelectTrigger>
                 <SelectContent className="bg-black/20 backdrop-blur-md border border-neutral-800 rounded-xl">
                   {models.map((model, index) => (
-                    <SelectItem key={index} value={model.id} className="text-neutral-100 rounded-lg cursor-pointer">{model.name}</SelectItem>
+                    <SelectItem key={index} value={model.id} className="text-neutral-100 rounded-lg cursor-pointer active:bg-neutral-800">{model.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -251,6 +343,12 @@ export default function Chat({ id }: { id: string }) {
               <ArrowUp className="size-4" />
             </Button>
           </div>
+        </div>
+
+        <div className="fixed bottom-6 right-6 z-10">
+          <Button variant="outline" size="icon" className="cursor-pointer rounded-full bg-neutral-800 border-neutral-700 hover:bg-neutral-700 hover:border-neutral-600 transition-all duration-300" onClick={scrollToBottom}>
+            <ArrowDownIcon className="size-4" />
+          </Button>
         </div>
       </div>
     </div>
@@ -291,7 +389,7 @@ const AIMessage = memo(({ message }: { message: { content: string } }) => {
                     />
                   </div>
                 </div>
-                <CodeBlock lang={language as BundledLanguage}>
+                <CodeBlock lang={Object.keys(bundledLanguages).includes(language) ? language : 'text'}>
                   {/* @ts-ignore */}
                   {node.children[0].children[0].value}
                 </CodeBlock>

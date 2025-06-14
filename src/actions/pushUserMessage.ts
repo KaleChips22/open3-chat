@@ -61,3 +61,24 @@ export async function pushUserMessage(chatId: Id<"chats">, content: string, mode
 
   revalidatePath(`/chat/${chatId}`)
 }
+
+export async function pushLocalUserMessage(chatId: string, content: string, modelName: string) {
+  const aiResponse = await generateNextCompletion(
+    modelName,
+    [
+      {
+        role: "user",
+        content: content
+      }
+    ]
+  )
+
+  const chunks: string[] = []
+  for await (const chunk of aiResponse) {
+    if (chunk.choices[0]?.delta.content) {
+      chunks.push(chunk.choices[0]?.delta.content)
+    }
+  }
+
+  return chunks
+}
