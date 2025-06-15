@@ -363,7 +363,7 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
           </Sidebar>
           
           <main className="flex-1 relative h-full overflow-hidden flex flex-col bg-neutral-950">
-            <div className="absolute top-0 left-0 z-20 m-2">
+            <div className={`fixed top-0 left-0 z-20 m-2 bg-neutral-900/50 backdrop-blur-xs rounded-md transition-all ${!isMobile && sidebarOpen && 'translate-x-72'}`}>
               <SidebarTrigger className="size-10 bg-transparent text-accent cursor-pointer p-2 hover:bg-transparent hover:text-white" />
             </div>
             <div className="flex-1 overflow-auto w-full max-w-full">

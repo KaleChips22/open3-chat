@@ -273,7 +273,7 @@ export default function Chat({ id }: { id: string }) {
 
   const handleSubmit = async (message: string) => {
     if (user) {
-      pushUserMessage(id as Id<"chats">, message, models[selectedModel]!.id)
+      pushUserMessage(id as Id<"chats">, message, models[selectedModel]!.id, user.id)
     } else {
       // Handle unauthenticated user message
       const newMessage = {

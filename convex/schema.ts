@@ -18,4 +18,13 @@ export default defineSchema({
     // parentId: v.union(v.id("messages"), v.literal("root")),
     // childrenIds: v.array(v.id("messages")),
   }).index("by_chat", ["chatId"]),
+  userSettings: defineTable({
+    clerkId: v.string(),
+    colorTheme: v.union(v.literal("purple"), v.literal("red"), v.literal("pink"), v.literal("blue"), v.literal("green")),
+    codeTheme: v.string(),
+    darkMode: v.optional(v.boolean()),
+    openRouterApiKey: v.optional(v.string()),
+    customPrompt: v.optional(v.boolean()),
+    customPromptText: v.optional(v.string()),
+  }).index("by_clerkId", ["clerkId"]),
 });

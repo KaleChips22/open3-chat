@@ -93,7 +93,7 @@ const HomePage = () => {
     if (firstMessage.trim() !== "" && models[selectedModel]) {
       const selectedModelData = models[selectedModel]
       if (!selectedModelData) return
-      pushUserMessage(newChat, firstMessage, selectedModelData.id)
+      pushUserMessage(newChat, firstMessage, selectedModelData.id, user.id)
     }
 
     router.push(`/chat/${newChat}`)

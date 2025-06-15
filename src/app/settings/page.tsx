@@ -2,19 +2,20 @@
 
 import BackgroundEffects from '@/components/BackgroundEffects'
 import LayoutWithSidebar from '@/components/LayoutWithSidebar'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import useLocalStorage from '@/hooks/useLocalStorage'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useTheme } from '@/components/ThemeProvider'
 import { useClerk, useUser } from '@clerk/nextjs'
 import { ArrowLeftIcon, LogOutIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { useQuery, useMutation } from 'convex/react'
+import { api } from '../../../convex/_generated/api'
 
 const themes = [
   {
@@ -46,15 +47,56 @@ const themes = [
 
 const SettingsPage = () => {
   const { colorTheme, setColorTheme } = useTheme()
-  const [codeTheme, setCodeTheme] = useLocalStorage("open3:codeTheme", "dark-plus")
-  const [stupidMode, setStupidMode] = useLocalStorage("open3:stupidMode", false)
-  const [brainrotMode, setBrainrotMode] = useLocalStorage("open3:brainrotMode", false)
-  const [customPrompt, setCustomPrompt] = useLocalStorage("open3:customPrompt", false)
-
-  const { user, isSignedIn } = useUser()
+  const { user } = useUser()
   const { signOut } = useClerk()
-
   const router = useRouter()
+
+  const settings = useQuery(api.userSettings.get, user ? { clerkId: user.id } : "skip")
+  const updateSettings = useMutation(api.userSettings.update)
+
+  const [codeTheme, setCodeTheme] = useState(settings?.codeTheme || "dark-plus")
+  const [customPrompt, setCustomPrompt] = useState(settings?.customPrompt || false)
+  const [customPromptText, setCustomPromptText] = useState(settings?.customPromptText || "")
+  const [openRouterApiKey, setOpenRouterApiKey] = useState(settings?.openRouterApiKey || "")
+
+  useEffect(() => {
+    if (settings) {
+      setCodeTheme(settings.codeTheme)
+      setCustomPrompt(settings.customPrompt || false)
+      setCustomPromptText(settings.customPromptText || "")
+      setOpenRouterApiKey(settings.openRouterApiKey || "")
+    }
+  }, [settings])
+
+  const handleCodeThemeChange = (value: string) => {
+    setCodeTheme(value)
+    if (user) {
+      updateSettings({ clerkId: user.id, codeTheme: value })
+    }
+  }
+
+  const handleCustomPromptChange = (checked: boolean) => {
+    setCustomPrompt(checked)
+    if (user) {
+      updateSettings({ clerkId: user.id, customPrompt: checked })
+    }
+  }
+
+  const handleCustomPromptTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setCustomPromptText(value)
+    if (user) {
+      updateSettings({ clerkId: user.id, customPromptText: value })
+    }
+  }
+
+  const handleOpenRouterApiKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setOpenRouterApiKey(value)
+    if (user) {
+      updateSettings({ clerkId: user.id, openRouterApiKey: value })
+    }
+  }
 
   return (
     <LayoutWithSidebar currentChatId={null}>
@@ -70,43 +112,40 @@ const SettingsPage = () => {
             </Button>
           </div>
 
-          {/* Account Settings */ }
-          {isSignedIn && (
-            <Card className="mb-6 bg-black/20 backdrop-blur-md border border-neutral-800">
-              <CardHeader>
-                <CardTitle className="text-white text-2xl font-bold">Account</CardTitle>
-                <CardDescription className='text-neutral-400 text-md'>Manage your account settings</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 gap-4 w-full lg:grid-cols-2">
-                  <div className="flex items-center justify-between w-full">
-                    <div className="space-y-0.5">
-                      <Label className='text-neutral-100 text-md'>Email</Label>
-                      <p className="text-sm text-neutral-400">{user?.emailAddresses[0]?.emailAddress}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between w-full">
-                    <div className="space-y-0.5">
-                      <Label className='text-neutral-100 text-md'>Name</Label>
-                      <p className="text-sm text-neutral-400">{user?.firstName} {user?.lastName}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between w-full">
-                    <div className="space-y-0.5">
-                      <Label className='text-neutral-100 text-md'>Username</Label>
-                      <p className="text-sm text-neutral-400">{user?.username}</p>
-                    </div>
+          {/* Account Settings */}
+          <Card className="mb-6 bg-black/20 backdrop-blur-md border border-neutral-800">
+            <CardHeader>
+              <CardTitle className="text-white text-2xl font-bold">Account</CardTitle>
+              <CardDescription className='text-neutral-400 text-md'>Manage your account settings</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 gap-4 w-full lg:grid-cols-2">
+                <div className="flex items-center justify-between w-full">
+                  <div className="space-y-0.5">
+                    <Label className='text-neutral-100 text-md'>Email</Label>
+                    <p className="text-sm text-neutral-400">{user?.emailAddresses[0]?.emailAddress}</p>
                   </div>
                 </div>
                 <div className="flex items-center justify-between w-full">
-                  <Button variant="outline" className="bg-neutral-800 border border-neutral-700 rounded-md px-3 py-2 text-neutral-100 hover:border-neutral-600 hover:text-neutral-100 cursor-pointer transition-all duration-300" onClick={() => signOut()} size="lg">
-                    <LogOutIcon className="w-4 h-4 mr-2" />
-                    Sign Out
-                  </Button>
+                  <div className="space-y-0.5">
+                    <Label className='text-neutral-100 text-md'>Name</Label>
+                    <p className="text-sm text-neutral-400">{user?.firstName} {user?.lastName}</p>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          )}
+                <div className="flex items-center justify-between w-full">
+                  <div className="space-y-0.5">
+                    <Label className='text-neutral-100 text-md'>Username</Label>
+                    <p className="text-sm text-neutral-400">{user?.username}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <Button variant="outline" className="bg-neutral-800 border border-neutral-700 rounded-md px-3 py-2 text-neutral-100 hover:border-neutral-600 hover:text-neutral-100 cursor-pointer transition-all duration-300" onClick={() => signOut()} size="lg">
+                <LogOutIcon className="w-4 h-4 mr-2" />
+                Sign Out
+              </Button>
+            </CardContent>
+          </Card>
 
           {/* Theme Selection */}
           <Card className="mb-6 bg-black/20 backdrop-blur-md border border-neutral-800">
@@ -139,19 +178,12 @@ const SettingsPage = () => {
               <CardDescription className='text-neutral-400 text-md'>Customize how Open3 Chat looks</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className='text-neutral-100 text-md'>Dark Mode</Label>
-                  <p className="text-sm text-neutral-400">Toggle dark mode on or off</p>
-                </div>
-                <Switch checked={darkMode} onCheckedChange={setDarkMode} />
-              </div> */}
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label className='text-neutral-100 text-md'>Code Theme</Label>
                   <p className="text-sm text-neutral-400">Choose your preferred code block theme</p>
                 </div>
-                <Select value={codeTheme} onValueChange={(value) => setCodeTheme(value)}>
+                <Select value={codeTheme} onValueChange={handleCodeThemeChange}>
                   <SelectTrigger className="bg-neutral-800 border border-neutral-700 rounded-md px-3 py-2 text-neutral-100">
                     <SelectValue placeholder="Select a theme" />
                   </SelectTrigger>
@@ -173,23 +205,22 @@ const SettingsPage = () => {
               <CardDescription className='text-neutral-400 text-md'>Configure your API keys for different providers</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* <div className="space-y-2">
-                <Label htmlFor="openai-key" className='text-neutral-100 text-md'>OpenAI API Key</Label>
-                <Input id="openai-key" type="password" placeholder="sk-..." className="bg-neutral-800 border border-neutral-700 rounded-md px-3 py-2 text-neutral-100" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="anthropic-key" className='text-neutral-100 text-md'>Anthropic API Key</Label>
-                <Input id="anthropic-key" type="password" placeholder="sk-ant-..." className="bg-neutral-800 border border-neutral-700 rounded-md px-3 py-2 text-neutral-100" />
-              </div> */}
               <div className="space-y-2">
                 <Label htmlFor="openrouter-key" className='text-neutral-100 text-md'>OpenRouter API Key</Label>
-                <Input id="openrouter-key" type="password" placeholder="sk-or-..." className="bg-neutral-800 border border-neutral-700 rounded-md px-3 py-2 text-neutral-100" />
+                <Input 
+                  id="openrouter-key" 
+                  type="password" 
+                  placeholder="sk-or-..." 
+                  className="bg-neutral-800 border border-neutral-700 rounded-md px-3 py-2 text-neutral-100"
+                  value={openRouterApiKey}
+                  onChange={handleOpenRouterApiKeyChange}
+                />
               </div>
             </CardContent>
           </Card>
 
           {/* Fun Settings */}
-          <Card className="bg-black/20 backdrop-blur-md border border-neutral-800">
+          <Card className="mb-6 bg-black/20 backdrop-blur-md border border-neutral-800">
             <CardHeader>
               <CardTitle className="text-white text-2xl font-bold">Fun Settings</CardTitle>
               <CardDescription className='text-neutral-400 text-md'>Add some personality to your chat experience</CardDescription>
@@ -197,24 +228,10 @@ const SettingsPage = () => {
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label className='text-neutral-100 text-md'>Stupid Mode</Label>
-                  <p className="text-sm text-neutral-400">Make the AI act stupid</p>
-                </div>
-                <Switch checked={stupidMode} onCheckedChange={setStupidMode} />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className='text-neutral-100 text-md'>Brainrot Mode</Label>
-                  <p className="text-sm text-neutral-400">Make the AI answer only in brainrot</p>
-                </div>
-                <Switch checked={brainrotMode} onCheckedChange={setBrainrotMode} />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
                   <Label className='text-neutral-100 text-md'>Custom Prompt</Label>
                   <p className="text-sm text-neutral-400">Use a custom system prompt</p>
                 </div>
-                <Switch checked={customPrompt} onCheckedChange={setCustomPrompt} />
+                <Switch checked={customPrompt} onCheckedChange={handleCustomPromptChange} />
               </div>
               {customPrompt && (
                 <div className="space-y-2">
@@ -223,6 +240,8 @@ const SettingsPage = () => {
                     id="custom-prompt" 
                     placeholder="Enter your custom system prompt..." 
                     className="bg-neutral-800 border border-neutral-700 rounded-md px-3 py-2 text-neutral-100"
+                    value={customPromptText}
+                    onChange={handleCustomPromptTextChange}
                   />
                 </div>
               )}

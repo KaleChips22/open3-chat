@@ -1,6 +1,6 @@
 import "@/styles/globals.css";
 
-import { type Metadata } from "next";
+import { type Metadata, type Viewport } from "next";
 import { Geist } from "next/font/google";
 
 import { TRPCReactProvider } from "@/trpc/react";
@@ -15,13 +15,20 @@ export const metadata: Metadata = {
   description: "An open source LLM chat application built for Theo's T3 Chat Cloneathon",
   authors: [{ name: "Kale", url: "https://github.com/KaleChips22" }],
   icons: [{ rel: "icon", url: "/favicon.ico" }],
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
+  // viewport: {
+  //   width: 'device-width',
+  //   initialScale: 1,
+  //   maximumScale: 1,
+  //   userScalable: false,
+  // },
 };
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false
+}
 
 const geist = Geist({
   subsets: ["latin"],
@@ -36,15 +43,15 @@ export default function RootLayout({
       <body className="min-h-screen w-full overflow-x-hidden">
         <TRPCReactProvider>
           <ConvexClientProvider>
-            <ThemeProvider defaultColorTheme="purple" defaultDarkMode={true}>
-              <ClerkProvider appearance={{
-                baseTheme: dark,
-              }}>
+            <ClerkProvider appearance={{
+              baseTheme: dark,
+            }}>
+              <ThemeProvider defaultColorTheme="purple" defaultDarkMode={true}>
                 <main className="relative min-h-screen w-full">
                   {children}
                 </main>
-              </ClerkProvider>
-            </ThemeProvider>
+              </ThemeProvider>
+            </ClerkProvider>
           </ConvexClientProvider>
         </TRPCReactProvider>
       </body>

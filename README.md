@@ -23,7 +23,7 @@ The backend is composed entirely of next.js server actions and convex functions
 
 - [X] Model selection
 - [X] Have multiple models
-- [ ] BYOK (w/ Most major carriers (OpenAI, Anthropic, etc.) maybe...) as well as OpenRouter (fs)
+- [X] BYOK (w/ Most major carriers (OpenAI, Anthropic, etc.) maybe...) as well as OpenRouter (fs)
 - [X] Guest Chatting
   - [ ] Limit guest chats to free models, unless they have their own key
 - [X] Syntax Highlighting
@@ -43,21 +43,14 @@ The backend is composed entirely of next.js server actions and convex functions
 - [X] Reasoning Detials
 - [X] Syntax Highlighting
 - [X] Guest Chatting
-- [ ] BYOK
+- [X] BYOK
 - [ ] Resumable streams
 - [X] Settings Page
 
 #### Serious Settings
-- [ ] Light/Dark Toggle
 - [X] BYOK inputs
-- [ ] BYOK backend support
-
-#### Fun dumb shit
-- [ ] Silly system prompts
-  - you are stupid
-  - answer only in brainrot
-  - etc...
-- [ ] Some other dumb shit :)
+- [X] BYOK backend support
+- [X] Custom System Prompt
 
 ### Done
 - [X] Main UI
@@ -98,9 +91,9 @@ The backend is composed entirely of next.js server actions and convex functions
   - [X] Guest Chatting
 
 ### Doing Next
-- [ ] Add user model to convex
-  - [ ] Add custom API key
-- [ ] Add system prompts
+- [X] Add user model to convex
+  - [X] Add custom API key
+- [X] Add system prompts
 - [ ] Manage State in Stream **IN PROGRESS**
   - ~~**fix whatever is wrong with the freaking code blocks!!!!!!!!!!!**~~ (I can't believe i litteraly just forgot an item in the dependancy array this was killing me all night smh)
   - [X] Lock input until stream is done

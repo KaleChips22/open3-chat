@@ -1,10 +1,14 @@
 import { useLayoutEffect, useReducer, useState, type JSX } from 'react'
 import { highlight } from './CodeBlockShared'
 import type { BundledLanguage } from 'shiki'
-import useLocalStorage from '@/hooks/useLocalStorage'
+import { useQuery } from 'convex/react'
+import { api } from '../../convex/_generated/api'
+import { useUser } from '@clerk/nextjs'
 
 export function CodeBlock({ initial, children, lang }: { initial?: JSX.Element, children: string, lang: BundledLanguage }) {
-  const [codeTheme, setCodeTheme] = useLocalStorage('open3:codeTheme', 'dark-plus')
+  const { user } = useUser()
+  const settings = useQuery(api.userSettings.get, user ? { clerkId: user.id } : "skip")
+  const codeTheme = settings?.codeTheme || "dark-plus"
 
   const reducer = (state: JSX.Element, action: JSX.Element) => {
     return action
@@ -14,7 +18,7 @@ export function CodeBlock({ initial, children, lang }: { initial?: JSX.Element, 
 
   useLayoutEffect(() => {
     void highlight(children, lang, codeTheme).then(setNodes)
-  }, [children])
+  }, [children, codeTheme])
 
   return nodes ?? <pre><code>{children}</code></pre>
 }

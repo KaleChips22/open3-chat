@@ -1,6 +1,9 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState } from 'react'
+import { useQuery, useMutation } from 'convex/react'
+import { api } from '../../convex/_generated/api'
+import { useUser } from '@clerk/nextjs'
 
 type ColorTheme = 'purple' | 'red' | 'pink' | 'blue' | 'green'
 type DarkMode = boolean
@@ -35,15 +38,23 @@ export function ThemeProvider({
   storageKey = 'open3',
   ...props
 }: ThemeProviderProps) {
+  const { user } = useUser()
+  const settings = useQuery(api.userSettings.get, user ? { clerkId: user.id } : "skip")
+  const updateSettings = useMutation(api.userSettings.update)
+
   const [colorTheme, setColorTheme] = useState<ColorTheme>(
-    () => (typeof window !== 'undefined' && localStorage.getItem(`${storageKey}:colorTheme`) as ColorTheme) || defaultColorTheme
+    () => settings?.colorTheme || defaultColorTheme
   )
   const [darkMode, setDarkMode] = useState<DarkMode>(
-    () => {
-      const stored = typeof window !== 'undefined' && localStorage.getItem(`${storageKey}:darkMode`)
-      return stored ? stored === 'true' : defaultDarkMode
-    }
+    () => settings?.darkMode ?? defaultDarkMode
   )
+
+  useEffect(() => {
+    if (settings) {
+      setColorTheme(settings.colorTheme)
+      setDarkMode(settings.darkMode ?? defaultDarkMode)
+    }
+  }, [settings])
 
   useEffect(() => {
     const root = window.document.documentElement
@@ -63,15 +74,15 @@ export function ThemeProvider({
   const value = {
     colorTheme,
     setColorTheme: (theme: ColorTheme) => {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(`${storageKey}:colorTheme`, theme)
+      if (user) {
+        updateSettings({ clerkId: user.id, colorTheme: theme })
       }
       setColorTheme(theme)
     },
     darkMode,
     setDarkMode: (darkMode: DarkMode) => {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(`${storageKey}:darkMode`, darkMode.toString())
+      if (user) {
+        updateSettings({ clerkId: user.id, darkMode })
       }
       setDarkMode(darkMode)
     },
