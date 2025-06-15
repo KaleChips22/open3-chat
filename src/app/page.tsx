@@ -104,31 +104,31 @@ const HomePage = () => {
       {/* Background Effects */}
       <BackgroundEffects variant="dark" />
       
-      <div className="flex flex-col items-center justify-center min-h-screen max-w-4xl mx-auto gap-12 pb-24 relative z-1">
+      <div className="flex flex-col items-center justify-center min-h-screen max-w-4xl mx-auto gap-8 sm:gap-12 pb-24 px-4 sm:px-6 relative z-1">
         {/* Hero Section */}
-        <div className="w-full flex flex-col items-center text-center gap-6 mt-8">
+        <div className="w-full flex flex-col items-center text-center gap-4 sm:gap-6 mt-4 sm:mt-8">
           <div className="relative">
             <div className={`absolute -inset-1 rounded-full blur-xl bg-accent/20 ${colorTheme}-glow animate-pulse-slow`}></div>
-            <div className={`relative size-20 rounded-full glassmorphic-dark flex items-center justify-center border-accent/30 ${colorTheme}-glow animate-float`}>
-              <Sparkles className="size-10 text-accent" />
+            <div className={`relative size-16 sm:size-20 rounded-full glassmorphic-dark flex items-center justify-center border-accent/30 ${colorTheme}-glow animate-float`}>
+              <Sparkles className="size-8 sm:size-10 text-accent" />
             </div>
           </div>
           
-          <h1 className="text-5xl font-bold text-white flex flex-col items-center gap-2 mt-4">
+          <h1 className="text-4xl sm:text-5xl font-bold text-white flex flex-col items-center gap-2 mt-4">
             <span>Welcome{user ? `, ${user.firstName}` : ''}</span>
             <span className="bg-gradient-to-r from-white via-accent to-white bg-clip-text text-transparent animate-gradient">to Open3 Chat</span>
           </h1>
           
-          <p className="text-xl text-neutral-300 max-w-2xl">
+          <p className="text-lg sm:text-xl text-neutral-300 max-w-2xl px-4">
             An intelligent conversation partner powered by state-of-the-art language models. Ask anything and get thoughtful, accurate responses.
           </p>
           
           {!user && (
-            <div className="flex flex-col gap-4 items-center justify-center">
+            <div className="flex flex-col gap-4 items-center justify-center w-full max-w-sm sm:max-w-md">
               <Button 
                 variant="purple" 
                 size="lg" 
-                className="mt-2 text-lg px-8 py-4 h-auto cursor-pointer w-full"
+                className="mt-2 text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 h-auto cursor-pointer w-full"
                 onClick={() => makeNewChat()}
               >
                 Get Started
@@ -137,7 +137,7 @@ const HomePage = () => {
               <Button 
                 variant="ghost" 
                 size="lg" 
-                className="text-lg px-8 py-2 h-auto cursor-pointer border-neutral-700 text-neutral-300 hover:border-neutral-600 hover:bg-neutral-100/5 hover:text-neutral-100 w-full"
+                className="text-base sm:text-lg px-6 sm:px-8 py-2 h-auto cursor-pointer border-neutral-700 text-neutral-300 hover:border-neutral-600 hover:bg-neutral-100/5 hover:text-neutral-100 w-full"
                 onClick={() => openSignIn()}
               >
                 Sign In
@@ -148,17 +148,17 @@ const HomePage = () => {
         </div>
         
         {/* Examples Section */}
-        <div className="w-full">
-          <h2 className="text-2xl font-bold text-white mb-4">Try asking about...</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="w-full px-4 sm:px-0">
+          <h2 className="text-xl sm:text-2xl font-bold text-white mb-4">Try asking about...</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             {examples.map((example, index) => (
               <div 
                 key={index} 
-                className={`glassmorphic-dark rounded-xl p-4 border-accent/10 hover:border-accent/30 cursor-pointer transition-all hover:${colorTheme}-glow-sm duration-300`}
+                className={`glassmorphic-dark rounded-xl p-3 sm:p-4 border-accent/10 hover:border-accent/30 cursor-pointer transition-all hover:${colorTheme}-glow-sm duration-300`}
                 onClick={() => makeNewChat(example)}
                 style={{ animationDelay: `${index * 0.5}s` }}
               >
-                <p className="text-white">{example}</p>
+                <p className="text-white text-sm sm:text-base">{example}</p>
               </div>
             ))}
           </div>
@@ -166,7 +166,7 @@ const HomePage = () => {
       </div>
 
       {/* Floating Input */}
-      <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 w-full max-w-4xl px-4 text-sm sm:text-base z-10">
+      <div className="absolute bottom-4 sm:bottom-6 left-1/2 transform -translate-x-1/2 w-full max-w-4xl px-4 text-sm sm:text-base z-10">
         <ChatInput 
           onSubmit={makeNewChat}
           selectedModel={selectedModel}

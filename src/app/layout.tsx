@@ -15,6 +15,12 @@ export const metadata: Metadata = {
   description: "An open source LLM chat application built for Theo's T3 Chat Cloneathon",
   authors: [{ name: "Kale", url: "https://github.com/KaleChips22" }],
   icons: [{ rel: "icon", url: "/favicon.ico" }],
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
 };
 
 const geist = Geist({
@@ -27,14 +33,16 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${geist.variable}`}>
-      <body>
+      <body className="min-h-screen w-full overflow-x-hidden">
         <TRPCReactProvider>
           <ConvexClientProvider>
             <ThemeProvider defaultColorTheme="purple" defaultDarkMode={true}>
               <ClerkProvider appearance={{
                 baseTheme: dark,
               }}>
-                {children}
+                <main className="relative min-h-screen w-full">
+                  {children}
+                </main>
               </ClerkProvider>
             </ThemeProvider>
           </ConvexClientProvider>

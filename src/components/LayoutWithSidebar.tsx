@@ -1,7 +1,7 @@
 'use client'
 
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
-import { LogInIcon, MessageCircleIcon, PencilIcon, PlusIcon, SparklesIcon, TrashIcon, CheckIcon, XIcon } from 'lucide-react'
+import { LogInIcon, MessageCircleIcon, PencilIcon, PlusIcon, SparklesIcon, TrashIcon, CheckIcon, XIcon, ChevronLeftIcon, SettingsIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import React, { useState, useEffect } from 'react'
@@ -15,7 +15,7 @@ import { useTheme } from './ThemeProvider'
 const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactNode, currentChatId?: Id<"chats"> | null }) => {
   const router = useRouter()
   const { user, isLoaded } = useUser()
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [localChats, setLocalChats] = useState<{ id: string, title: string }[]>([])
   const [renamingChatId, setRenamingChatId] = useState<string | null>(null)
@@ -156,15 +156,21 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
       <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <div className="flex h-full w-full">
           <Sidebar className="bg-neutral-950 border-r border-neutral-700/50 h-full z-20 flex-shrink-0">
-            <SidebarHeader className="bg-neutral-950 border-b border-neutral-700/50 text-white text-lg p-4 flex gap-2 flex-row items-center">
+            <SidebarHeader className="bg-neutral-950 border-b border-neutral-700/50 text-white text-lg p-4 flex gap-2 flex-row items-center justify-between">
               <Link href="/" className="flex flex-row items-center gap-2">
                 <SparklesIcon className="size-5 font-bold text-accent" />
                 <h1 className="text-lg font-semibold">Open3 Chat</h1>
               </Link>
+              {isMobile && (
+
+                <SidebarTrigger
+                  className='bg-neutral-900 border-0 text-neutral-300 hover:bg-neutral-800 hover:text-white cursor-pointer'
+                />
+              )}
             </SidebarHeader>
             <SidebarContent className="bg-neutral-950 overflow-y-auto">
               <SidebarGroup className="flex flex-col mt-4 gap-1">
-                <SidebarGroupLabel className="text-white text-lg font-semibold px-4">My Chats</SidebarGroupLabel>
+                <SidebarGroupLabel className="text-white text-lg font-semibold px-4 mb-4">My Chats</SidebarGroupLabel>
                 <SidebarGroupContent className="flex flex-col gap-2">
                   {displayChats && displayChats.length > 0 ? displayChats.map((chat) => (
                     currentChatId === (user ? chat._id : chat.id) ? (
@@ -333,14 +339,17 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
                 </SidebarGroupContent>
               </SidebarGroup>
             </SidebarContent>
-            <SidebarFooter className="bg-neutral-950 border-t border-neutral-700/50 p-4">
+            <SidebarFooter className="bg-neutral-950 border-t border-neutral-700/50 p-4 flex flex-row items-center justify-center gap-0">
               <SignedOut>
                 <SignInButton mode="modal">
-                  <div className="flex flex-row items-center gap-2 justify-center cursor-pointer w-full hover:text-accent transition-colors">
+                  <div className="flex flex-row items-center gap-2 justify-center cursor-pointer w-auto hover:text-accent transition-colors pr-4 border-r-1 border-neutral-700">
                     <LogInIcon className="size-4" />
                     <span>Sign In</span>
                   </div>
                 </SignInButton>
+                <div className='pl-4 m-0 hover:text-accent cursor-pointer' onClick={() => router.push('/settings')}>
+                  <SettingsIcon className='size-5' />
+                </div>
               </SignedOut>
               <SignedIn>
                 <div className="flex flex-row items-center gap-2 justify-center cursor-pointer w-full relative overflow-hidden">

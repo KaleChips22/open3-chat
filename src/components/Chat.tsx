@@ -416,7 +416,7 @@ export default function Chat({ id }: { id: string }) {
         </div>
 
         <div className="fixed bottom-6 right-6 z-10">
-          <Button variant="outline" size="icon" className="cursor-pointer rounded-full bg-neutral-800 border-neutral-700 hover:bg-neutral-700 hover:border-neutral-600 transition-all duration-300" onClick={scrollToBottom}>
+          <Button variant="default" size="icon" className="cursor-pointer rounded-full bg-neutral-900 border-neutral-600 hover:bg-neutral-800 hover:border-neutral-700 transition-all duration-300 text-neutral-300 hover:text-neutral-100" onClick={scrollToBottom}>
             <ArrowDownIcon className="size-4" />
           </Button>
         </div>
@@ -446,9 +446,11 @@ const AIMessage = memo(({ message }: { message: { content: string, model: string
         ) : (
           <>
             {message.reasoning && (
-              <Accordion type="single" collapsible className="w-full" defaultValue="reasoning">
+              <Accordion type="single" collapsible className="w-full" defaultValue="">
                 <AccordionItem value="reasoning">
-                  <AccordionTrigger className="text-sm text-neutral-300 hover:text-neutral-100 cursor-pointer">Reasoning</AccordionTrigger>
+                    <AccordionTrigger className="text-sm text-neutral-300 hover:text-neutral-100 cursor-pointer">
+                      Reasoning
+                    </AccordionTrigger>
                   <AccordionContent className="text-sm text-neutral-300">
                     {message.reasoning}
                   </AccordionContent>

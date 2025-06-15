@@ -61,7 +61,7 @@ const SettingsPage = () => {
       <div className="h-full w-full flex flex-col bg-neutral-950 text-neutral-100 relative">
         <BackgroundEffects variant="dark" />
 
-        <div className="container max-w-4xl mx-auto py-8 px-4 z-10">
+        <div className="container max-w-4xl mx-auto py-8 px-4 z-10 mt-6">
           <div className="flex flex-row items-center justify-between mb-8">
             <h1 className="text-3xl font-bold text-white">Settings</h1>
             <Button variant="link" className="text-neutral-100 hover:text-neutral-100 cursor-pointer transition-all duration-300" onClick={() => router.back()}>
