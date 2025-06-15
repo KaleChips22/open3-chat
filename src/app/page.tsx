@@ -104,7 +104,7 @@ const HomePage = () => {
       {/* Background Effects */}
       <BackgroundEffects variant="dark" />
       
-      <div className="flex flex-col items-center justify-center min-h-screen max-w-4xl mx-auto gap-8 sm:gap-12 pb-24 px-4 sm:px-6 relative z-1 pt-6">
+      <div className="flex flex-col items-center justify-center min-h-screen max-w-4xl mx-auto gap-8 sm:gap-12 pb-24 px-4 sm:px-6 relative z-1 pt-6 sm:pt-2">
         {/* Hero Section */}
         <div className="w-full flex flex-col items-center text-center gap-4 sm:gap-6 mt-4 sm:mt-8">
           <div className="relative">

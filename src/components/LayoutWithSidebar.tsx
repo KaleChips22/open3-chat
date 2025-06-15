@@ -226,7 +226,7 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
                           {renamingChatId !== (user ? chat._id : chat.id) && (
                             <div className="flex items-center gap-1">
                               <div
-                                className="flex items-center justify-center cursor-pointer text-neutral-400 hover:text-white group-hover/chat-title:opacity-100 opacity-0 transition-all p-1"
+                                className="flex items-center justify-center cursor-pointer text-neutral-400 hover:text-white group-hover/chat-title:opacity-100 sm:opacity-0 transition-all p-1"
                                 onClick={(e) => {
                                   handleRenameChat(user ? chat._id : chat.id, chat.title)
                                   e.stopPropagation()
@@ -235,7 +235,7 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
                                 <PencilIcon className="size-4" />
                               </div>
                               <div
-                                className="flex items-center justify-center cursor-pointer text-neutral-400 hover:text-red-500 group-hover/chat-title:opacity-100 opacity-0 transition-all p-1"
+                                className="flex items-center justify-center cursor-pointer text-neutral-400 hover:text-red-500 group-hover/chat-title:opacity-100 sm:opacity-0 transition-all p-1"
                                 onClick={(e) => {
                                   e.stopPropagation()
                                   handleDeleteChat(user ? chat._id : chat.id)
@@ -300,7 +300,7 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
                           {renamingChatId !== (user ? chat._id : chat.id) && (
                             <div className="flex items-center gap-1">
                               <div
-                                className="flex items-center justify-center cursor-pointer text-neutral-400 hover:text-white group-hover/chat-title:opacity-100 opacity-0 transition-all p-1"
+                                className="flex items-center justify-center cursor-pointer text-neutral-400 hover:text-white group-hover/chat-title:opacity-100 sm:opacity-0 transition-all p-1"
                                 onClick={(e) => {
                                   handleRenameChat(user ? chat._id : chat.id, chat.title)
                                   e.stopPropagation()
@@ -309,7 +309,7 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
                                 <PencilIcon className="size-4" />
                               </div>
                               <div
-                                className="flex items-center justify-center cursor-pointer text-neutral-400 hover:text-red-500 group-hover/chat-title:opacity-100 opacity-0 transition-all p-1"
+                                className="flex items-center justify-center cursor-pointer text-neutral-400 hover:text-red-500 group-hover/chat-title:opacity-100 sm:opacity-0 transition-all p-1"
                                 onClick={(e) => {
                                   e.stopPropagation()
                                   handleDeleteChat(user ? chat._id : chat.id)
