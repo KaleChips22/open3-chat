@@ -27,4 +27,4 @@ export default defineSchema({
     customPrompt: v.optional(v.boolean()),
     customPromptText: v.optional(v.string()),
   }).index("by_clerkId", ["clerkId"]),
-});
+})

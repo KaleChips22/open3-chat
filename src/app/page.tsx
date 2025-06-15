@@ -115,7 +115,7 @@ const HomePage = () => {
           </div>
           
           <h1 className="text-4xl sm:text-5xl font-bold text-white flex flex-col lg:flex-row items-center gap-2 mt-4">
-            <span>Welcome{user ? `, ${user.firstName}` : ''}</span>
+            <span>Welcome</span>
             <span className="bg-gradient-to-r from-white via-accent to-white bg-clip-text text-transparent animate-gradient">to Open3 Chat</span>
           </h1>
           

@@ -26,9 +26,11 @@ The backend is composed entirely of next.js server actions and convex functions
 - [X] BYOK (w/ Most major carriers (OpenAI, Anthropic, etc.) maybe...) as well as OpenRouter (fs)
 - [X] Guest Chatting
   - [ ] Limit guest chats to free models, unless they have their own key
+  - ***FINISH THIS NEXT***
 - [X] Syntax Highlighting
 - [X] Documentation
 - [ ] Chat actions (retry/delete)
+  - **this after**
   - [ ] Layout
   - [ ] Convex ftns
 

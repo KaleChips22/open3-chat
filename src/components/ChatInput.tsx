@@ -62,7 +62,7 @@ export default function ChatInput({
             </SelectTrigger>
             <SelectContent className="bg-black/20 backdrop-blur-md border border-neutral-800 rounded-xl">
               {models.map((model, index) => (
-                <SelectItem key={index} value={model.id} className="text-neutral-100 rounded-lg cursor-pointer active:bg-neutral-800">
+                <SelectItem disabled={!model.features.includes('free')} key={index} value={model.id} className="text-neutral-100 rounded-lg cursor-pointer active:bg-neutral-800">
                   <div className="flex flex-row items-center gap-2 justify-between">
                     <img src={model.icon} alt={model.name} className="size-4 text-white" />
                     {model.name}

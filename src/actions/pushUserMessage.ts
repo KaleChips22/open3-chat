@@ -51,7 +51,7 @@ export async function pushUserMessage(chatId: Id<"chats">, content: string, mode
   }
 
   const aiResponse = await generateNextCompletion(
-    modelName,
+    userBYOK ? modelName : (models.find((val) => val.id === modelName)?.features.includes('free') ? modelName : 'deepseek/deepseek-chat-v3-0324:free'),
     [
       ...previousMessages.map((message) => ({
         role: message.role,
