@@ -104,7 +104,7 @@ const HomePage = () => {
       {/* Background Effects */}
       <BackgroundEffects variant="dark" />
       
-      <div className="flex flex-col items-center justify-center min-h-screen max-w-4xl mx-auto gap-8 sm:gap-12 pb-24 px-4 sm:px-6 relative z-1">
+      <div className="flex flex-col items-center justify-center min-h-screen max-w-4xl mx-auto gap-8 sm:gap-12 pb-24 px-4 sm:px-6 relative z-1 pt-6">
         {/* Hero Section */}
         <div className="w-full flex flex-col items-center text-center gap-4 sm:gap-6 mt-4 sm:mt-8">
           <div className="relative">
@@ -114,37 +114,14 @@ const HomePage = () => {
             </div>
           </div>
           
-          <h1 className="text-4xl sm:text-5xl font-bold text-white flex flex-col items-center gap-2 mt-4">
+          <h1 className="text-4xl sm:text-5xl font-bold text-white flex flex-col lg:flex-row items-center gap-2 mt-4">
             <span>Welcome{user ? `, ${user.firstName}` : ''}</span>
             <span className="bg-gradient-to-r from-white via-accent to-white bg-clip-text text-transparent animate-gradient">to Open3 Chat</span>
           </h1>
           
-          <p className="text-lg sm:text-xl text-neutral-300 max-w-2xl px-4">
+          {/* <p className="text-lg sm:text-xl text-neutral-300 max-w-2xl px-4">
             An intelligent conversation partner powered by state-of-the-art language models. Ask anything and get thoughtful, accurate responses.
-          </p>
-          
-          {!user && (
-            <div className="flex flex-col gap-4 items-center justify-center w-full max-w-sm sm:max-w-md">
-              <Button 
-                variant="purple" 
-                size="lg" 
-                className="mt-2 text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 h-auto cursor-pointer w-full"
-                onClick={() => makeNewChat()}
-              >
-                Get Started
-                <ArrowRight className="ml-2" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="lg" 
-                className="text-base sm:text-lg px-6 sm:px-8 py-2 h-auto cursor-pointer border-neutral-700 text-neutral-300 hover:border-neutral-600 hover:bg-neutral-100/5 hover:text-neutral-100 w-full"
-                onClick={() => openSignIn()}
-              >
-                Sign In
-                <ArrowRight className="ml-2" />
-              </Button>
-            </div>
-          )}
+          </p> */}
         </div>
         
         {/* Examples Section */}
