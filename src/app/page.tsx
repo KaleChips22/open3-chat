@@ -1,34 +1,33 @@
 "use client"
 
-import { pushLocalUserMessage, pushUserMessage } from "@/actions/pushUserMessage"
+import { pushUserMessage } from "@/actions/pushUserMessage"
 import BackgroundEffects from "@/components/BackgroundEffects"
 import LayoutWithSidebar from "@/components/LayoutWithSidebar"
-import { Button } from "@/components/ui/button"
-import { useClerk, useUser } from "@clerk/nextjs"
+import { useUser } from "@clerk/nextjs"
 import { api } from "../../convex/_generated/api"
-import { useMutation, useQuery } from "convex/react"
-import { ArrowRight, ArrowUp, BrainCircuit, Sparkles, SparklesIcon } from "lucide-react"
+import { useMutation } from "convex/react"
+import { Sparkles } from "lucide-react"
 import { useRouter } from "next/navigation"
-import React, { useEffect, useRef, useState } from "react"
+import React from "react"
 import models from "@/models/models"
 import { useTheme } from "@/components/ThemeProvider"
 import ChatInput from "@/components/ChatInput"
 import useLocalStorage from "@/hooks/useLocalStorage"
+import Link from "next/link"
 
 const examples: string[] = [
-  "How does AI work?",
-  "Are black holes real?",
-  "How many Rs are in the word \"strawberry\"?",
-  "What is the meaning of life?",
+  "Teach me something I might not know.",
+  "Barinstorm unique ideas for my next project.",
+  "Help me outline a plan for my personal goals.",
+  "Tell me a joke.",
 ]
 
 const HomePage = () => {
   const { user } = useUser()
-  const { openSignIn } = useClerk()
   const router = useRouter()
   const { colorTheme } = useTheme()
   const createChat = useMutation(api.chats.createChat)
-  const [selectedModel, setSelectedModel] = useLocalStorage("open3:selectedModel", 0)
+  const [selectedModel, setSelectedModel] = useLocalStorage("open3:selectedModel", 2)
 
   const generateId = () => {
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
@@ -119,9 +118,9 @@ const HomePage = () => {
             <span className="bg-gradient-to-r from-white via-accent to-white bg-clip-text text-transparent animate-gradient">to Open3 Chat</span>
           </h1>
           
-          {/* <p className="text-lg sm:text-xl text-neutral-300 max-w-2xl px-4">
-            An intelligent conversation partner powered by state-of-the-art language models. Ask anything and get thoughtful, accurate responses.
-          </p> */}
+          <Link href="/about" className="text-base sm:text-lg text-neutral-400 max-w-2xl px-4 hover:text-accent transition-colors">
+            About Open3 Chat
+          </Link>
         </div>
         
         {/* Examples Section */}

@@ -49,7 +49,7 @@ export default function Chat({ id }: { id: string }) {
   const [previousMessagesLength, setPreviousMessagesLength] = useState(0)
   const [previousLastMessageContent, setPreviousLastMessageContent] = useState("")
 
-  const [selectedModel, setSelectedModel] = useLocalStorage("open3:selectedModel", 0)
+  const [selectedModel, setSelectedModel] = useLocalStorage("open3:selectedModel", 2)
 
   useEffect(() => {
     if (selectedModel > models.length) {
