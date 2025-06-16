@@ -60,6 +60,34 @@ const SettingsPage = () => {
   const [openRouterApiKey, setOpenRouterApiKey] = useState(settings?.openRouterApiKey || "")
 
   useEffect(() => {
+    const localOpenRouterApiKey = localStorage.getItem("open3:openRouterApiKey")
+    if (localOpenRouterApiKey && !settings?.openRouterApiKey) {
+      setOpenRouterApiKey(localOpenRouterApiKey)
+    }
+  }, [openRouterApiKey, setOpenRouterApiKey, settings?.openRouterApiKey])
+
+  useEffect(() => {
+    const localCodeTheme = localStorage.getItem("open3:codeTheme")
+    if (localCodeTheme && !settings?.codeTheme) {
+      setCodeTheme(localCodeTheme || "dark-plus")
+    }
+  }, [codeTheme, setCodeTheme, settings?.codeTheme])
+
+  useEffect(() => {
+    const localCustomPrompt = localStorage.getItem("open3:customPrompt")
+    if (localCustomPrompt && !settings?.customPrompt) {
+      setCustomPrompt(localCustomPrompt === "true")
+    }
+  }, [customPrompt, setCustomPrompt, settings?.customPrompt])
+
+  useEffect(() => {
+    const localCustomPromptText = localStorage.getItem("open3:customPromptText")
+    if (localCustomPromptText && !settings?.customPromptText) {
+      setCustomPromptText(localCustomPromptText)
+    }
+  }, [customPromptText, setCustomPromptText, settings?.customPromptText])
+
+  useEffect(() => {
     if (settings) {
       setCodeTheme(settings.codeTheme)
       setCustomPrompt(settings.customPrompt || false)
@@ -72,6 +100,8 @@ const SettingsPage = () => {
     setCodeTheme(value)
     if (user) {
       updateSettings({ clerkId: user.id, codeTheme: value })
+    } else {
+      localStorage.setItem("open3:codeTheme", value)
     }
   }
 
@@ -79,6 +109,8 @@ const SettingsPage = () => {
     setCustomPrompt(checked)
     if (user) {
       updateSettings({ clerkId: user.id, customPrompt: checked })
+    } else {
+      localStorage.setItem("open3:customPrompt", checked.toString())
     }
   }
 
@@ -87,6 +119,8 @@ const SettingsPage = () => {
     setCustomPromptText(value)
     if (user) {
       updateSettings({ clerkId: user.id, customPromptText: value })
+    } else {
+      localStorage.setItem("open3:customPromptText", value)
     }
   }
 
@@ -95,6 +129,8 @@ const SettingsPage = () => {
     setOpenRouterApiKey(value)
     if (user) {
       updateSettings({ clerkId: user.id, openRouterApiKey: value })
+    } else {
+      localStorage.setItem("open3:openRouterApiKey", value)
     }
   }
 
@@ -113,39 +149,41 @@ const SettingsPage = () => {
           </div>
 
           {/* Account Settings */}
-          <Card className="mb-6 bg-black/20 backdrop-blur-md border border-neutral-800">
-            <CardHeader>
-              <CardTitle className="text-white text-2xl font-bold">Account</CardTitle>
-              <CardDescription className='text-neutral-400 text-md'>Manage your account settings</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 gap-4 w-full lg:grid-cols-2">
-                <div className="flex items-center justify-between w-full">
-                  <div className="space-y-0.5">
-                    <Label className='text-neutral-100 text-md'>Email</Label>
-                    <p className="text-sm text-neutral-400">{user?.emailAddresses[0]?.emailAddress}</p>
+          {user && (
+            <Card className="mb-6 bg-black/20 backdrop-blur-md border border-neutral-800">
+              <CardHeader>
+                <CardTitle className="text-white text-2xl font-bold">Account</CardTitle>
+                <CardDescription className='text-neutral-400 text-md'>Manage your account settings</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 gap-4 w-full lg:grid-cols-2">
+                  <div className="flex items-center justify-between w-full">
+                    <div className="space-y-0.5">
+                      <Label className='text-neutral-100 text-md'>Email</Label>
+                      <p className="text-sm text-neutral-400">{user?.emailAddresses[0]?.emailAddress}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between w-full">
+                    <div className="space-y-0.5">
+                      <Label className='text-neutral-100 text-md'>Name</Label>
+                      <p className="text-sm text-neutral-400">{user?.firstName} {user?.lastName}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between w-full">
+                    <div className="space-y-0.5">
+                      <Label className='text-neutral-100 text-md'>Username</Label>
+                      <p className="text-sm text-neutral-400">{user?.username}</p>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center justify-between w-full">
-                  <div className="space-y-0.5">
-                    <Label className='text-neutral-100 text-md'>Name</Label>
-                    <p className="text-sm text-neutral-400">{user?.firstName} {user?.lastName}</p>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between w-full">
-                  <div className="space-y-0.5">
-                    <Label className='text-neutral-100 text-md'>Username</Label>
-                    <p className="text-sm text-neutral-400">{user?.username}</p>
-                  </div>
-                </div>
-              </div>
-              
-              <Button variant="outline" className="bg-neutral-800 border border-neutral-700 rounded-md px-3 py-2 text-neutral-100 hover:border-neutral-600 hover:text-neutral-100 cursor-pointer transition-all duration-300" onClick={() => signOut()} size="lg">
-                <LogOutIcon className="w-4 h-4 mr-2" />
-                Sign Out
-              </Button>
-            </CardContent>
-          </Card>
+                
+                <Button variant="outline" className="bg-neutral-800 border border-neutral-700 rounded-md px-3 py-2 text-neutral-100 hover:border-neutral-600 hover:text-neutral-100 cursor-pointer transition-all duration-300" onClick={() => signOut()} size="lg">
+                  <LogOutIcon className="w-4 h-4 mr-2" />
+                  Sign Out
+                </Button>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Theme Selection */}
           <Card className="mb-6 bg-black/20 backdrop-blur-md border border-neutral-800">
@@ -222,8 +260,8 @@ const SettingsPage = () => {
           {/* Fun Settings */}
           <Card className="mb-6 bg-black/20 backdrop-blur-md border border-neutral-800">
             <CardHeader>
-              <CardTitle className="text-white text-2xl font-bold">Fun Settings</CardTitle>
-              <CardDescription className='text-neutral-400 text-md'>Add some personality to your chat experience</CardDescription>
+              <CardTitle className="text-white text-2xl font-bold">Other Settings</CardTitle>
+              <CardDescription className='text-neutral-400 text-md'>Other settings for your chat experience</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">

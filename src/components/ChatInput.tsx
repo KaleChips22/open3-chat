@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { ArrowUp } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
@@ -6,6 +6,9 @@ import Image from "next/image"
 import models from "@/models/models"
 import featureIcons from "@/models/features"
 import { useTheme } from "./ThemeProvider"
+import { useUser } from "@clerk/nextjs"
+import { useQuery } from "convex/react"
+import { api } from "convex/_generated/api"
 
 interface ChatInputProps {
   onSubmit: (message: string) => void
@@ -25,6 +28,19 @@ export default function ChatInput({
   const [input, setInput] = useState("")
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const { colorTheme } = useTheme()
+  const { user } = useUser()
+
+  const [customAPIKey, setCustomAPIKey] = useState('')
+  // gete from convex
+  const userSettings = useQuery(api.userSettings.get, user ? { clerkId: user.id } : "skip")
+
+  useEffect(() => {
+    if (user) {
+      setCustomAPIKey(userSettings?.openRouterApiKey || '')
+    } else {
+      setCustomAPIKey(localStorage.getItem("open3:openRouterApiKey") || '')
+      }
+  }, [userSettings, user])
 
   const resizeInput = () => {
     if (inputRef.current) {
@@ -62,7 +78,7 @@ export default function ChatInput({
             </SelectTrigger>
             <SelectContent className="bg-black/20 backdrop-blur-md border border-neutral-800 rounded-xl">
               {models.map((model, index) => (
-                <SelectItem disabled={!model.features.includes('free')} key={index} value={model.id} className="text-neutral-100 rounded-lg cursor-pointer active:bg-neutral-800">
+                <SelectItem disabled={!model.features.includes('free') && !customAPIKey} key={index} value={model.id} className="text-neutral-100 rounded-lg cursor-pointer active:bg-neutral-800">
                   <div className="flex flex-row items-center gap-2 justify-between">
                     <img src={model.icon} alt={model.name} className="size-4 text-white" />
                     {model.name}

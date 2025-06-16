@@ -137,14 +137,18 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
   const handleDeleteChat = (chatId: string) => {
     if (user) {
       deleteChat({ id: chatId as Id<"chats"> })
-      router.push("/")
+      if (chatId === currentChatId) {
+        router.push("/")
+      }
     } else {
       const allLocalChatIds = JSON.parse(localStorage.getItem("open3:chatIds") ?? "[]")
       const updatedChatIds = allLocalChatIds.filter((id: string) => id !== chatId)
       localStorage.setItem("open3:chatIds", JSON.stringify(updatedChatIds))
       localStorage.removeItem(`open3:chat:${chatId}`)
       setLocalChats(chats => chats.filter(chat => chat.id !== chatId))
-      router.push("/")
+      if (chatId === currentChatId) {
+        router.push("/")
+      }
     }
   }
 

@@ -50,6 +50,7 @@ const HomePage = () => {
           timestamp?: string;
           _id?: string;
           isComplete?: boolean;
+          reasoning?: string;
         }>;
       } = {
         title: "New Chat",
@@ -79,11 +80,14 @@ const HomePage = () => {
           content: "",
           model: selectedModelData.id,
           timestamp: new Date().toISOString(),
-          isComplete: false
+          isComplete: false,
+          reasoning: ""
         })
+
+        // Save the chat data before navigation
+        window.localStorage.setItem("open3:chat:" + newChatId, JSON.stringify(chatData))
       }
       
-      window.localStorage.setItem("open3:chat:" + newChatId, JSON.stringify(chatData))
       router.push(`/chat/${newChatId}`)
       return
     }

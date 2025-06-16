@@ -129,14 +129,35 @@ export default function Chat({ id }: { id: string }) {
       const previousMessage = localChat.messages[localChat.messages.length - 2]
       if (!previousMessage || previousMessage.role !== "user") return
 
+      // Only start streaming if this is a new message that wasn't just created
+      // This prevents duplicate streaming when handleSubmit is already handling it
+      const messageAge = Date.now() - new Date(lastMessage.timestamp).getTime()
+      
+      // Check if this is a new chat from home page
+      const isNewChatFromHome = localChat.messages.length === 2 && 
+                               previousMessage.role === "user" && 
+                               lastMessage.role === "assistant" &&
+                               lastMessage.content === "" &&
+                               messageAge < 1000;
+
+      // If it's not a new chat from home page and the message is too recent, skip
+      if (!isNewChatFromHome && messageAge < 1000) return;
+
+      // Check if this message is already being handled by handleSubmit
+      if (lastMessage._id === lastMessageId) return;
+
       // Start streaming the response
       const streamResponse = async () => {
         if (isStreamingRef.current) return // Double check before starting
         isStreamingRef.current = true
         setIsStreaming(true)
+        setLastMessageId(lastMessage._id)
         
         try {
-          const chunks = await pushLocalUserMessage(id, previousMessage.content, lastMessage.model)
+          const chunks = await pushLocalUserMessage(id, previousMessage.content, lastMessage.model, localChat, window.localStorage.getItem("open3:openRouterApiKey") || null, {
+            customPrompt: JSON.parse(window.localStorage.getItem("open3:customPrompt") || "false"),
+            customPromptText: window.localStorage.getItem("open3:customPromptText") || ""
+          })
           
           let fullResponse = ""
           let fullReasoning = ""
@@ -275,6 +296,14 @@ export default function Chat({ id }: { id: string }) {
     if (user) {
       pushUserMessage(id as Id<"chats">, message, models[selectedModel]!.id, user.id)
     } else {
+      // Get user settings from local storage
+      const userSettings = JSON.parse(localStorage.getItem("open3:userSettings") || "{}")
+      const userBYOK = userSettings?.openRouterApiKey || null
+      const systemPromptDetails = {
+        customPrompt: userSettings?.customPrompt || false,
+        customPromptText: userSettings?.customPromptText || ""
+      }
+
       // Handle unauthenticated user message
       const newMessage = {
         _id: Math.random().toString(36).substring(2, 15),
@@ -313,57 +342,76 @@ export default function Chat({ id }: { id: string }) {
       setLocalChat(chatWithAiMessage)
       localStorage.setItem(`open3:chat:${id}`, JSON.stringify(chatWithAiMessage))
 
-      // Get AI response chunks
-      const chunks = await pushLocalUserMessage(id, message, models[selectedModel]!.id)
-      
-      // Process chunks with a small delay to simulate streaming
-      let fullResponse = ""
-      let fullReasoning = ""
-      for await (const chunk of chunks) {
-        if (chunk.content) {
-          fullResponse += chunk.content
-        }
-        if (chunk.reasoning) {
-          fullReasoning += chunk.reasoning
-        }
+      // Set streaming state before starting response generation
+      isStreamingRef.current = true
+      setIsStreaming(true)
+      setLastMessageId(aiMessageId)
+
+      try {
+        // Get AI response chunks with custom API key and system prompt
+        const chunks = await pushLocalUserMessage(
+          id, 
+          message, 
+          models[selectedModel]!.id,
+          updatedChat,
+          userBYOK,
+          systemPromptDetails
+        )
         
-        // Update AI message with new content and reasoning
-        const updatedMessages = chatWithAiMessage.messages.map(msg => 
+        // Process chunks with a small delay to simulate streaming
+        let fullResponse = ""
+        let fullReasoning = ""
+        for await (const chunk of chunks) {
+          if (!isStreamingRef.current) break // Stop if streaming was cancelled
+          
+          if (chunk.content) {
+            fullResponse += chunk.content
+          }
+          if (chunk.reasoning) {
+            fullReasoning += chunk.reasoning
+          }
+          
+          // Update AI message with new content and reasoning
+          const updatedMessages = chatWithAiMessage.messages.map(msg => 
+            msg._id === aiMessageId 
+              ? { 
+                  ...msg, 
+                  content: fullResponse,
+                  reasoning: fullReasoning
+                }
+              : msg
+          )
+          
+          const updatedChatWithResponse = {
+            ...chatWithAiMessage,
+            messages: updatedMessages
+          }
+          
+          setLocalChat(updatedChatWithResponse)
+          localStorage.setItem(`open3:chat:${id}`, JSON.stringify(updatedChatWithResponse))
+          
+          // Add a small delay between chunks to simulate streaming
+          await new Promise(resolve => setTimeout(resolve, 10))
+        }
+
+        // Mark the message as complete after all chunks are processed
+        const finalMessages = chatWithAiMessage.messages.map(msg => 
           msg._id === aiMessageId 
-            ? { 
-                ...msg, 
-                content: fullResponse,
-                reasoning: fullReasoning
-              }
+            ? { ...msg, isComplete: true, content: fullResponse, reasoning: fullReasoning }
             : msg
         )
         
-        const updatedChatWithResponse = {
+        const finalChat = {
           ...chatWithAiMessage,
-          messages: updatedMessages
+          messages: finalMessages
         }
         
-        setLocalChat(updatedChatWithResponse)
-        localStorage.setItem(`open3:chat:${id}`, JSON.stringify(updatedChatWithResponse))
-        
-        // Add a small delay between chunks to simulate streaming
-        await new Promise(resolve => setTimeout(resolve, 10))
+        setLocalChat(finalChat)
+        localStorage.setItem(`open3:chat:${id}`, JSON.stringify(finalChat))
+      } finally {
+        isStreamingRef.current = false
+        setIsStreaming(false)
       }
-
-      // Mark the message as complete after all chunks are processed
-      const finalMessages = chatWithAiMessage.messages.map(msg => 
-        msg._id === aiMessageId 
-          ? { ...msg, isComplete: true, content: fullResponse, reasoning: fullReasoning }
-          : msg
-      )
-      
-      const finalChat = {
-        ...chatWithAiMessage,
-        messages: finalMessages
-      }
-      
-      setLocalChat(finalChat)
-      localStorage.setItem(`open3:chat:${id}`, JSON.stringify(finalChat))
     }
 
     setUserHasScrolled(false) // Reset scroll position when sending a message

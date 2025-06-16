@@ -98,15 +98,33 @@ export async function pushUserMessage(chatId: Id<"chats">, content: string, mode
   revalidatePath(`/chat/${chatId}`)
 }
 
-export async function* pushLocalUserMessage(chatId: string, content: string, modelName: string, userBYOK?: string | null, systemPromptDetails?: { customPrompt?: boolean, customPromptText?: string }) {
+export async function* pushLocalUserMessage(
+  chatId: string, 
+  content: string, 
+  modelName: string,
+  chatData: {
+    messages: {
+      role: string
+      content: string
+    }[]
+  },
+  userBYOK?: string | null, 
+  systemPromptDetails?: { 
+    customPrompt?: boolean, 
+    customPromptText?: string 
+  },
+) {
+  const previousMessages = chatData.messages || []
+
+  // Format messages for the API
+  const formattedMessages = previousMessages.map((message: any) => ({
+    role: message.role,
+    content: message.content
+  }))
+
   const aiResponse = await generateNextCompletion(
-    modelName,
-    [
-      {
-        role: "user",
-        content: content
-      }
-    ],
+    userBYOK ? modelName : (models.find((val) => val.id === modelName)?.features.includes('free') ? modelName : 'deepseek/deepseek-chat-v3-0324:free'),
+    formattedMessages,
     userBYOK,
     systemPromptDetails
   )
