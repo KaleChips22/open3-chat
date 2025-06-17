@@ -8,7 +8,7 @@ import featureIcons from "@/models/features"
 import { useTheme } from "./ThemeProvider"
 import { useUser } from "@clerk/nextjs"
 import { useQuery } from "convex/react"
-import { api } from "convex/_generated/api"
+import { api } from "../../convex/_generated/api"
 
 interface ChatInputProps {
   onSubmit: (message: string) => void
