@@ -107,47 +107,48 @@ const HomePage = () => {
       {/* Background Effects */}
       <BackgroundEffects variant="dark" />
       
-      <div className="flex flex-col items-center justify-center min-h-screen max-w-4xl mx-auto gap-8 sm:gap-12 pb-24 px-4 sm:px-6 relative z-1 pt-6 sm:pt-2">
-        {/* Hero Section */}
-        <div className="w-full flex flex-col items-center text-center gap-4 sm:gap-6 mt-4 sm:mt-8">
-          <div className="relative">
-            <div className={`absolute -inset-1 rounded-full blur-xl bg-accent/20 ${colorTheme}-glow animate-pulse-slow`}></div>
-            <div className={`relative size-16 sm:size-20 rounded-full glassmorphic-dark flex items-center justify-center border-accent/30 ${colorTheme}-glow animate-float`}>
-              <Sparkles className="size-8 sm:size-10 text-accent" />
+      <div className="relative w-full h-full max-h-screen max-w-screen overflow-scroll">
+        <div className="flex flex-col items-center justify-center h-screen max-w-4xl mx-auto gap-8 sm:gap-12 pb-30 px-4 sm:px-6 relative z-1 pt-6 my-8 sm:pt-2">
+          {/* Hero Section */}
+          <div className="w-full flex flex-col items-center text-center gap-4 sm:gap-6 mt-4 sm:mt-8">
+            <div className="relative">
+              <div className={`absolute -inset-1 rounded-full blur-xl bg-accent/20 ${colorTheme}-glow animate-pulse-slow`}></div>
+              <div className={`relative size-16 sm:size-20 rounded-full glassmorphic-dark flex items-center justify-center border-accent/30 ${colorTheme}-glow animate-float`}>
+                <Sparkles className="size-8 sm:size-10 text-accent" />
+              </div>
+            </div>
+        
+            <h1 className="text-4xl sm:text-5xl font-bold text-white flex flex-col lg:flex-row items-center gap-2 mt-4">
+              <span>Welcome</span>
+              <span className="bg-gradient-to-r from-white via-accent to-white bg-clip-text text-transparent animate-gradient">to Open3 Chat</span>
+            </h1>
+        
+            <Link href="/about" className="text-base sm:text-lg text-neutral-400 max-w-2xl px-4 hover:text-accent transition-colors">
+              About Open3 Chat
+            </Link>
+          </div>
+        
+          {/* Examples Section */}
+          <div className="w-full px-4 sm:px-0">
+            <h2 className="text-xl sm:text-2xl font-bold text-white mb-4">Try asking about...</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              {examples.map((example, index) => (
+                <div
+                  key={index}
+                  className={`glassmorphic-dark rounded-xl p-3 sm:p-4 border-accent/10 hover:border-accent/30 cursor-pointer transition-all hover:${colorTheme}-glow-sm duration-300`}
+                  onClick={() => makeNewChat(example)}
+                  style={{ animationDelay: `${index * 0.5}s` }}
+                >
+                  <p className="text-white text-sm sm:text-base">{example}</p>
+                </div>
+              ))}
             </div>
           </div>
-          
-          <h1 className="text-4xl sm:text-5xl font-bold text-white flex flex-col lg:flex-row items-center gap-2 mt-4">
-            <span>Welcome</span>
-            <span className="bg-gradient-to-r from-white via-accent to-white bg-clip-text text-transparent animate-gradient">to Open3 Chat</span>
-          </h1>
-          
-          <Link href="/about" className="text-base sm:text-lg text-neutral-400 max-w-2xl px-4 hover:text-accent transition-colors">
-            About Open3 Chat
-          </Link>
         </div>
-        
-        {/* Examples Section */}
-        <div className="w-full px-4 sm:px-0">
-          <h2 className="text-xl sm:text-2xl font-bold text-white mb-4">Try asking about...</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            {examples.map((example, index) => (
-              <div 
-                key={index} 
-                className={`glassmorphic-dark rounded-xl p-3 sm:p-4 border-accent/10 hover:border-accent/30 cursor-pointer transition-all hover:${colorTheme}-glow-sm duration-300`}
-                onClick={() => makeNewChat(example)}
-                style={{ animationDelay: `${index * 0.5}s` }}
-              >
-                <p className="text-white text-sm sm:text-base">{example}</p>
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* Floating Input */}
       </div>
-
-      {/* Floating Input */}
-      <div className="absolute bottom-4 sm:bottom-6 left-1/2 transform -translate-x-1/2 w-full max-w-4xl px-4 text-sm sm:text-base z-10">
-        <ChatInput 
+      <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 w-full max-w-4xl px-4 text-sm sm:text-base z-10">
+        <ChatInput
           onSubmit={makeNewChat}
           selectedModel={selectedModel}
           onModelChange={setSelectedModel}
