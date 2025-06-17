@@ -49,7 +49,7 @@ export default function Chat({ id }: { id: string }) {
   const [previousMessagesLength, setPreviousMessagesLength] = useState(0)
   const [previousLastMessageContent, setPreviousLastMessageContent] = useState("")
 
-  const [selectedModel, setSelectedModel] = useLocalStorage("open3:selectedModel", 2)
+  const [selectedModel, setSelectedModel] = useLocalStorage("open3:selectedModel", 0)
 
   useEffect(() => {
     if (selectedModel > models.length) {
@@ -154,7 +154,8 @@ export default function Chat({ id }: { id: string }) {
         setLastMessageId(lastMessage._id)
         
         try {
-          const chunks = await pushLocalUserMessage(id, previousMessage.content, lastMessage.model, localChat, window.localStorage.getItem("open3:openRouterApiKey") || null, {
+          const userBYOK = window.localStorage.getItem("open3:openRouterApiKey")
+          const chunks = await pushLocalUserMessage(id, previousMessage.content, lastMessage.model, localChat, userBYOK, {
             customPrompt: JSON.parse(window.localStorage.getItem("open3:customPrompt") || "false"),
             customPromptText: window.localStorage.getItem("open3:customPromptText") || ""
           })
@@ -298,7 +299,8 @@ export default function Chat({ id }: { id: string }) {
     } else {
       // Get user settings from local storage
       const userSettings = JSON.parse(localStorage.getItem("open3:userSettings") || "{}")
-      const userBYOK = userSettings?.openRouterApiKey || null
+      const userBYOK = window.localStorage.getItem("open3:openRouterApiKey")
+
       const systemPromptDetails = {
         customPrompt: userSettings?.customPrompt || false,
         customPromptText: userSettings?.customPromptText || ""

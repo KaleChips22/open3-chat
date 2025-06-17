@@ -6,8 +6,17 @@ import type { Id } from "../../convex/_generated/dataModel";
 import { fetchMutation, fetchQuery } from "convex/nextjs";
 import { revalidatePath } from "next/cache";
 import { generateNextCompletion } from "@/models/index";
-import type { ChatCompletionChunk } from "openai/resources/index.mjs";
-import type { Stream } from "openai/core/streaming.mjs";
+
+// Define our own types since we're having import issues
+enum StreamPartType {
+  TextDelta = 'text-delta',
+  Reasoning = 'reasoning'
+}
+
+interface StreamPart {
+  type: StreamPartType | string;
+  textDelta: string;
+}
 
 interface Delta {
   content?: string;
@@ -50,18 +59,13 @@ export async function pushUserMessage(chatId: Id<"chats">, content: string, mode
     customPromptText: userSettings?.customPromptText || ""
   }
 
+
   const aiResponse = await generateNextCompletion(
-    userBYOK ? modelName : (models.find((val) => val.id === modelName)?.features.includes('free') ? modelName : 'deepseek/deepseek-chat-v3-0324:free'),
-    [
-      ...previousMessages.map((message) => ({
+    userBYOK !== null && userBYOK !== "" ? modelName : (models.find((val) => val.id === modelName)?.features.includes('free') ? modelName : 'deepseek/deepseek-chat-v3-0324:free'),
+    previousMessages.map((message) => ({
         role: message.role,
         content: message.content
       })),
-      {
-        role: "user",
-        content: content
-      }
-    ],
     userBYOK,
     systemPromptDetails
   )
@@ -75,18 +79,20 @@ export async function pushUserMessage(chatId: Id<"chats">, content: string, mode
     return
   }
 
-  for await (const chunk of aiResponse as Stream<ChatCompletionChunk>) {
-    const delta = chunk.choices[0]?.delta as Delta
-    if (delta?.reasoning) {
-      await fetchMutation(api.messages.appendReasoning, {
-        id: newAiMessage,
-        reasoning: delta.reasoning
-      })
-    }
-    if (delta?.content) {
+  // Process the stream from Vercel AI SDK
+  for await (const chunk of aiResponse.fullStream) {
+    if (!chunk) continue
+    
+    if (chunk.type === StreamPartType.TextDelta) {
       await fetchMutation(api.messages.appendMessage, {
         id: newAiMessage,
-        content: delta.content
+        content: chunk.textDelta
+      })
+    } else if (chunk.type === 'reasoning') {
+      // Handle reasoning if the model provides it
+      await fetchMutation(api.messages.appendReasoning, {
+        id: newAiMessage,
+        reasoning: chunk.textDelta
       })
     }
   }
@@ -125,7 +131,7 @@ export async function* pushLocalUserMessage(
   const aiResponse = await generateNextCompletion(
     userBYOK ? modelName : (models.find((val) => val.id === modelName)?.features.includes('free') ? modelName : 'deepseek/deepseek-chat-v3-0324:free'),
     formattedMessages,
-    userBYOK,
+    userBYOK !== null && userBYOK !== "" ? userBYOK : null,
     systemPromptDetails
   )
 
@@ -137,12 +143,18 @@ export async function* pushLocalUserMessage(
     return
   }
 
-  for await (const chunk of aiResponse as Stream<ChatCompletionChunk>) {
-    const delta = chunk.choices[0]?.delta as Delta
-    if (delta?.content || delta?.reasoning) {
+  // Process the stream from Vercel AI SDK
+  for await (const chunk of aiResponse.fullStream) {
+    if (!chunk) continue
+
+    if (chunk.type === StreamPartType.TextDelta) {
       yield {
-        content: delta?.content,
-        reasoning: delta?.reasoning
+        content: chunk.textDelta
+      }
+    } else if (chunk.type === 'reasoning') {
+      // Handle reasoning if the model provides it
+      yield {
+        reasoning: chunk.textDelta
       }
     }
   }

@@ -27,7 +27,7 @@ const HomePage = () => {
   const router = useRouter()
   const { colorTheme } = useTheme()
   const createChat = useMutation(api.chats.createChat)
-  const [selectedModel, setSelectedModel] = useLocalStorage("open3:selectedModel", 2)
+  const [selectedModel, setSelectedModel] = useLocalStorage("open3:selectedModel", 0)
 
   const generateId = () => {
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)

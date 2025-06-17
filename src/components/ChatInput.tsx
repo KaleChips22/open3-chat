@@ -70,7 +70,7 @@ export default function ChatInput({
       {onModelChange && (
         <div>
           <Select 
-            value={models[selectedModel]!.id} 
+            value={models[selectedModel]?.id || models[0]?.id} 
             onValueChange={(value) => onModelChange(models.findIndex((model) => model.id === value))}
           >
             <SelectTrigger className="bg-transparent border border-neutral-800 hover:bg-neutral-800 text-neutral-100 rounded-xl px-4 py-2 transition-all cursor-pointer">
