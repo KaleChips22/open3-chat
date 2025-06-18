@@ -4,7 +4,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./
 import remarkGfm from "remark-gfm"
 import { Markdown } from "node_modules/react-markdown/lib"
 import { CheckIcon, CopyIcon, GitBranchIcon } from "lucide-react"
-import { CodeBlock } from "./CodeBlock"
+import CodeBlock from "./CodeBlock"
 import { bundledLanguages } from "shiki"
 import models from "@/models/models"
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip"
