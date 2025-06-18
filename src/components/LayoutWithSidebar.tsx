@@ -378,7 +378,7 @@ const LayoutWithSidebar = ({ children }: { children: React.ReactNode }) => {
               </SignedOut>
               <SignedIn>
                 <div className="flex flex-row items-center gap-2 justify-center cursor-pointer w-full relative overflow-hidden">
-                  <Link href="/settings" className="flex flex-row items-center gap-2 justify-center cursor-pointer w-full transition-colors">
+                  <Link href="/settings" className="flex flex-row items-center gap-2 justify-center cursor-pointer w-full transition-colors text-white">
                     <span>{user?.fullName}</span>
                     <img src={user?.imageUrl} alt="User" className="size-8 rounded-full" />
                   </Link>
