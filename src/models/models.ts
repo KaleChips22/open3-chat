@@ -76,7 +76,6 @@ const models = [
     icon: gemini,
     features: [
       "fast",
-      "reasoning",
     ]
   },
   {
