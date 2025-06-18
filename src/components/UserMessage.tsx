@@ -1,6 +1,8 @@
 import { CheckIcon, CopyIcon, EditIcon, GitBranchIcon, RefreshCcwIcon, XIcon } from "lucide-react"
 import React, { useEffect, useState, useRef } from "react"
 import { CodeBlock } from "./CodeBlock"
+import React, { useEffect, useState, useRef, memo } from "react"
+import CodeBlock from "./CodeBlock"
 import type { BundledLanguage } from "shiki"
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip"
 
