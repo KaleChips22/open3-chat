@@ -72,7 +72,7 @@ const models = [
   },
   {
     name: "Gemini 2.5 Flash",
-    id: "google/gemini-2.5-flash-preview-05-20",
+    id: "google/gemini-2.5-flash",
     icon: gemini,
     features: [
       "fast",
@@ -81,7 +81,7 @@ const models = [
   },
   {
     name: "Gemini 2.5 Pro",
-    id: "google/gemini-2.5-pro-preview",
+    id: "google/gemini-2.5-pro",
     icon: gemini,
     features: [
       "fast",
