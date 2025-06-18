@@ -372,13 +372,13 @@ const LayoutWithSidebar = ({ children }: { children: React.ReactNode }) => {
                     <span>Sign In</span>
                   </div>
                 </SignInButton>
-                <div className='pl-4 m-0 hover:text-accent cursor-pointer text-neutral-100' onClick={() => router.push('/settings')}>
+                <div className='pl-4 m-0 hover:text-accent cursor-pointer text-neutral-100' onClick={() => { router.push('/settings'); if (isMobile) { setSidebarOpen(false) }}}>
                   <SettingsIcon className='size-5' />
                 </div>
               </SignedOut>
               <SignedIn>
                 <div className="flex flex-row items-center gap-2 justify-center cursor-pointer w-full relative overflow-hidden">
-                  <Link href="/settings" className="flex flex-row items-center gap-2 justify-center cursor-pointer w-full transition-colors text-white">
+                  <Link href="/settings" className="flex flex-row items-center gap-2 justify-center cursor-pointer w-full transition-colors text-white" onClick={() => { if (isMobile) { setSidebarOpen(false) }}}>
                     <span>{user?.fullName}</span>
                     <img src={user?.imageUrl} alt="User" className="size-8 rounded-full" />
                   </Link>
