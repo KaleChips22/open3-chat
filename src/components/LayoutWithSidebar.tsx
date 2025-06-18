@@ -3,7 +3,7 @@
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { LogInIcon, MessageCircleIcon, PencilIcon, PlusIcon, SparklesIcon, TrashIcon, CheckIcon, XIcon, ChevronLeftIcon, SettingsIcon } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import React, { useState, useEffect } from 'react'
 import { useMutation, useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
@@ -12,7 +12,7 @@ import { Button } from './ui/button'
 import type { Id } from 'convex/_generated/dataModel'
 import { useTheme } from './ThemeProvider'
 
-const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactNode, currentChatId?: Id<"chats"> | null }) => {
+const LayoutWithSidebar = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter()
   const { user, isLoaded } = useUser()
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -20,6 +20,10 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
   const [localChats, setLocalChats] = useState<{ id: string, title: string }[]>([])
   const [renamingChatId, setRenamingChatId] = useState<string | null>(null)
   const [renameInput, setRenameInput] = useState("")
+
+  const pathname = usePathname()
+  const isChatPage = pathname.startsWith("/chat")
+  const chatId = isChatPage ? pathname.split("/")[2] as Id<"chats"> : null
 
   const { colorTheme } = useTheme()
 
@@ -49,19 +53,19 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
 
   useEffect(() => {
     if (user) {
-      if (chats && chats.length > 0 && currentChatId && chats.find((chat) => chat._id === currentChatId)) {
+      if (chats && chats.length > 0 && chatId && chats.find((chat) => chat._id === chatId)) {
         setChatFound(true)
       } else {
         setChatFound(false)
       }
     } else {
-      if (localChats && localChats.length > 0 && currentChatId && localChats.find((chat) => chat.id === currentChatId)) {
+      if (localChats && localChats.length > 0 && chatId && localChats.find((chat) => chat.id === chatId)) {
         setChatFound(true)
       } else {
         setChatFound(false)
       }
     }
-  }, [chats, localChats, currentChatId, user])
+  }, [chats, localChats, chatId, user])
 
   // Check if we're on mobile and close sidebar automatically
   useEffect(() => {
@@ -137,7 +141,7 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
   const handleDeleteChat = (chatId: string) => {
     if (user) {
       deleteChat({ id: chatId as Id<"chats"> })
-      if (chatId === currentChatId) {
+      if (chatId === chatId) {
         router.push("/")
       }
     } else {
@@ -146,7 +150,7 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
       localStorage.setItem("open3:chatIds", JSON.stringify(updatedChatIds))
       localStorage.removeItem(`open3:chat:${chatId}`)
       setLocalChats(chats => chats.filter(chat => chat.id !== chatId))
-      if (chatId === currentChatId) {
+      if (chatId === chatId) {
         router.push("/")
       }
     }
@@ -177,7 +181,7 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
                 <SidebarGroupLabel className="text-white text-lg font-semibold px-4 mb-4">My Chats</SidebarGroupLabel>
                 <SidebarGroupContent className="flex flex-col gap-2">
                   {displayChats && displayChats.length > 0 ? displayChats.map((chat) => (
-                    currentChatId === (user ? chat._id : chat.id) ? (
+                    chatId === (user ? chat._id : chat.id) ? (
                       <SidebarMenuItem key={user ? chat._id : chat.id} className="flex flex-row items-center gap-2" onClick={() => {
                         router.push(`/chat/${user ? chat._id : chat.id}`)
                         if (isMobile) {
