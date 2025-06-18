@@ -90,6 +90,10 @@ const LayoutWithSidebar = ({ children }: { children: React.ReactNode }) => {
     if (user) {
       const newId = await newChat({ clerkId: user.id })
       router.push(`/chat/${newId}`)
+
+      if (isMobile) {
+        setSidebarOpen(false)
+      }
     } else {
       const newId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
       const allLocalChatIds = JSON.parse(localStorage.getItem("open3:chatIds") ?? "[]")
@@ -100,6 +104,10 @@ const LayoutWithSidebar = ({ children }: { children: React.ReactNode }) => {
         messages: []
       }))
       router.push(`/chat/${newId}`)
+
+      if (isMobile) {
+        setSidebarOpen(false)
+      }
     }
     
     // Auto-close sidebar on mobile after navigation
@@ -143,6 +151,10 @@ const LayoutWithSidebar = ({ children }: { children: React.ReactNode }) => {
       deleteChat({ id: chatId as Id<"chats"> })
       if (chatId === chatId) {
         router.push("/")
+
+        if (isMobile) {
+          setSidebarOpen(false)
+        }
       }
     } else {
       const allLocalChatIds = JSON.parse(localStorage.getItem("open3:chatIds") ?? "[]")
@@ -152,6 +164,10 @@ const LayoutWithSidebar = ({ children }: { children: React.ReactNode }) => {
       setLocalChats(chats => chats.filter(chat => chat.id !== chatId))
       if (chatId === chatId) {
         router.push("/")
+
+        if (isMobile) {
+          setSidebarOpen(false)
+        }
       }
     }
   }
