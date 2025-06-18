@@ -9,6 +9,7 @@ import { ConvexClientProvider } from "./ConvexClientProvider";
 import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
 import { ThemeProvider } from '@/components/ThemeProvider'
+import LayoutWithSidebar from "@/components/LayoutWithSidebar";
 
 export const metadata: Metadata = {
   title: "Open3 Chat",
@@ -48,7 +49,9 @@ export default function RootLayout({
             }}>
               <ThemeProvider defaultColorTheme="purple" defaultDarkMode={true}>
                 <main className="relative min-h-screen w-full">
-                  {children}
+                  <LayoutWithSidebar>
+                    {children}
+                  </LayoutWithSidebar>
                 </main>
               </ThemeProvider>
             </ClerkProvider>

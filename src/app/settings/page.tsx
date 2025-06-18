@@ -46,7 +46,7 @@ const themes = [
 ]
 
 const SettingsPage = () => {
-  const { colorTheme, setColorTheme } = useTheme()
+  const { colorTheme, setColorTheme, darkMode, setDarkMode } = useTheme()
   const { user } = useUser()
   const { signOut } = useClerk()
   const router = useRouter()
@@ -135,7 +135,7 @@ const SettingsPage = () => {
   }
 
   return (
-    <LayoutWithSidebar currentChatId={null}>
+    <>
       <div className="h-full w-full flex flex-col bg-neutral-950 text-neutral-100 relative">
         <BackgroundEffects variant="dark" />
 
@@ -216,6 +216,15 @@ const SettingsPage = () => {
               <CardDescription className='text-neutral-400 text-md'>Customize how Open3 Chat looks</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Dark Theme */}
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className='text-neutral-100 text-md'>Dark Theme</Label>
+                  <p className="text-sm text-neutral-400">Choose your preferred dark theme</p>
+                </div>
+                <Switch checked={!darkMode} onCheckedChange={() => setDarkMode(!darkMode)} />
+              </div>
+              {/* Code Theme */}
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label className='text-neutral-100 text-md'>Code Theme</Label>
@@ -287,7 +296,7 @@ const SettingsPage = () => {
           </Card>
         </div>
       </div>
-    </LayoutWithSidebar>
+    </>
   )
 }
 

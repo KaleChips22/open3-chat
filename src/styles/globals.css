@@ -81,6 +81,10 @@
   --sidebar-ring: oklch(0.7 0.05 300);
 }
 
+* {
+  transition: all 0.3s ease-in-out;
+}
+
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
@@ -113,6 +117,20 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.6 0.15 300);
+
+  --color-white: black;
+  --color-black: white;
+  --color-neutral-50: oklch(14.5% 0 0);
+  --color-neutral-100: oklch(20.5% 0 0);
+  --color-neutral-200: oklch(26.9% 0 0);
+  --color-neutral-300: oklch(33.3% 0 0);
+  --color-neutral-400: oklch(40.4% 0 0);
+  --color-neutral-500: oklch(47.5% 0 0);
+  --color-neutral-600: oklch(54.6% 0 0);
+  --color-neutral-700: oklch(62.7% 0 0);
+  --color-neutral-800: oklch(70.8% 0 0);
+  --color-neutral-900: oklch(85% 0 0);
+  --color-neutral-950: oklch(92.2% 0 0);
 }
 
 /* Color Themes */

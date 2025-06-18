@@ -346,12 +346,12 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
             <SidebarFooter className="bg-neutral-950 border-t border-neutral-700/50 p-4 flex flex-row items-center justify-center gap-0">
               <SignedOut>
                 <SignInButton mode="modal">
-                  <div className="flex flex-row items-center gap-2 justify-center cursor-pointer w-auto hover:text-accent transition-colors pr-4 border-r-1 border-neutral-700">
+                  <div className="flex flex-row items-center gap-2 justify-center cursor-pointer w-auto hover:text-accent transition-colors pr-4 border-r-1 border-neutral-700 text-neutral-100">
                     <LogInIcon className="size-4" />
                     <span>Sign In</span>
                   </div>
                 </SignInButton>
-                <div className='pl-4 m-0 hover:text-accent cursor-pointer' onClick={() => router.push('/settings')}>
+                <div className='pl-4 m-0 hover:text-accent cursor-pointer text-neutral-100' onClick={() => router.push('/settings')}>
                   <SettingsIcon className='size-5' />
                 </div>
               </SignedOut>
