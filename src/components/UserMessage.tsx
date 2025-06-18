@@ -1,7 +1,8 @@
 import { CheckIcon, CopyIcon, EditIcon, GitBranchIcon, RefreshCcwIcon, XIcon } from "lucide-react"
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useRef } from "react"
 import { CodeBlock } from "./CodeBlock"
 import type { BundledLanguage } from "shiki"
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip"
 
 const UserMessage = (
   {
@@ -18,23 +19,58 @@ const UserMessage = (
 ) => {
   const [isEditing, setIsEditing] = useState(false)
   const [editedMessage, setEditedMessage] = useState(message.content)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Auto-focus and resize textarea when editing starts
+  useEffect(() => {
+    if (isEditing && textareaRef.current) {
+      textareaRef.current.focus()
+      adjustTextareaHeight()
+    }
+  }, [isEditing])
+
+  // Adjust textarea height to fit content
+  const adjustTextareaHeight = () => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`
+    }
+  }
+
+  // Handle keyboard shortcuts
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Escape') {
+      setEditedMessage(message.content)
+      setIsEditing(false)
+    } else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      setIsEditing(false)
+      onMessageEdit(editedMessage)
+    }
+    
+    // Resize textarea as user types
+    setTimeout(adjustTextareaHeight, 0)
+  }
 
   const messageActions = [
     {
       icon: RefreshCcwIcon,
-      onClick: onMessageRegenerate
+      onClick: onMessageRegenerate,
+      tooltip: "Regenerate response"
     },
     {
       icon: EditIcon,
-      onClick: () => setIsEditing(true)
+      onClick: () => setIsEditing(true),
+      tooltip: "Edit message"
     },
     {
       icon: GitBranchIcon,
-      onClick: onMessageBranch
+      onClick: onMessageBranch,
+      tooltip: "Branch from here"
     },
     {
       icon: CopyIcon,
-      onClick: () => navigator.clipboard.writeText(message.content)
+      onClick: () => navigator.clipboard.writeText(message.content),
+      tooltip: "Copy message"
     },
   ]
   
@@ -45,9 +81,15 @@ const UserMessage = (
           <div className="whitespace-pre-wrap break-words text-sm leading-relaxed">
             {isEditing ? (
               <textarea
-                className="w-full bg-neutral-950 p-2 rounded-md border-none outline-none resize-none text-sm leading-relaxed"
+                ref={textareaRef}
+                className="w-full bg-neutral-950 p-2 rounded-md border-none outline-none resize-none text-sm leading-relaxed min-h-[100px]"
                 value={editedMessage}
-                onChange={(e) => setEditedMessage(e.target.value)}
+                onChange={(e) => {
+                  setEditedMessage(e.target.value)
+                  adjustTextareaHeight()
+                }}
+                onKeyDown={handleKeyDown}
+                placeholder="Edit your message..."
               />
             ) : applyUserCodeBlocks(message.content)}
           </div>
@@ -55,17 +97,44 @@ const UserMessage = (
         <div className="flex flex-row items-center justify-end gap-2 w-full">
           {isEditing ? (
             <div className="flex flex-row items-center justify-end gap-2 w-full">
-              <CheckIcon className="size-8 text-accent hover:text-white cursor-pointer p-2 hover:bg-neutral-800 rounded-md" onClick={() => {
-                setIsEditing(false)
-                onMessageEdit(editedMessage)
-              }} />
-              <XIcon className="size-8 text-accent hover:text-white cursor-pointer p-2 hover:bg-neutral-800 rounded-md" onClick={() => {
-                setEditedMessage(message.content)
-                setIsEditing(false)
-              }} />
+              <div className="text-xs text-neutral-400 mr-2">
+                Press Ctrl+Enter to save, Esc to cancel
+              </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <CheckIcon 
+                    className="size-8 text-accent hover:text-white cursor-pointer p-2 hover:bg-neutral-800 rounded-md" 
+                    onClick={() => {
+                      setIsEditing(false)
+                      onMessageEdit(editedMessage)
+                    }}
+                  />
+                </TooltipTrigger>
+                <TooltipContent>Save changes</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <XIcon 
+                    className="size-8 text-accent hover:text-white cursor-pointer p-2 hover:bg-neutral-800 rounded-md" 
+                    onClick={() => {
+                      setEditedMessage(message.content)
+                      setIsEditing(false)
+                    }}
+                  />
+                </TooltipTrigger>
+                <TooltipContent>Cancel</TooltipContent>
+              </Tooltip>
             </div>
           ) : messageActions.map((action, index) => (
-            <action.icon key={index} className="size-8 group-hover/userMessage:text-accent text-transparent group-hover/userMessage:hover:text-white cursor-pointer p-2 hover:bg-neutral-800 rounded-md" onClick={action.onClick} />
+            <Tooltip key={index}>
+              <TooltipTrigger asChild>
+                <action.icon 
+                  className="size-8 group-hover/userMessage:text-accent text-transparent group-hover/userMessage:hover:text-white cursor-pointer p-2 hover:bg-neutral-800 rounded-md" 
+                  onClick={action.onClick}
+                />
+              </TooltipTrigger>
+              <TooltipContent>{action.tooltip}</TooltipContent>
+            </Tooltip>
           ))}
         </div>
       </div>
