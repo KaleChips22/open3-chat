@@ -103,7 +103,7 @@ const HomePage = () => {
   }
 
   return (
-    <LayoutWithSidebar>
+    <>
       {/* Background Effects */}
       <BackgroundEffects variant="dark" />
       
@@ -155,7 +155,7 @@ const HomePage = () => {
           placeholder="Ask anything..."
         />
       </div>
-    </LayoutWithSidebar>
+    </>
   )
 }
 export default HomePage

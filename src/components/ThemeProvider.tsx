@@ -34,13 +34,26 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
 export function ThemeProvider({
   children,
   defaultColorTheme = 'purple',
-  defaultDarkMode = true,
+  defaultDarkMode = false,
   storageKey = 'open3',
   ...props
 }: ThemeProviderProps) {
   const { user } = useUser()
-  const settings = useQuery(api.userSettings.get, user ? { clerkId: user.id } : "skip")
+
+  const [settings, setSettings] = useState<any |null>(null)
+  const settingsQuery = useQuery(api.userSettings.get, user ? { clerkId: user.id } : "skip")
   const updateSettings = useMutation(api.userSettings.update)
+
+  useEffect(() => {
+    if (user) {
+      setSettings(settingsQuery)
+    } else {
+      setSettings({
+        colorTheme: window.localStorage.getItem(`${storageKey}:colorTheme`) || defaultColorTheme,
+        darkMode: JSON.parse(window.localStorage.getItem(`${storageKey}:darkMode`) || defaultDarkMode.toString())
+      })
+    }
+  }, [settingsQuery, user])
 
   const [colorTheme, setColorTheme] = useState<ColorTheme>(
     () => settings?.colorTheme || defaultColorTheme

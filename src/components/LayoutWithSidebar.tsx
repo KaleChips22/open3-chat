@@ -3,7 +3,7 @@
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { LogInIcon, MessageCircleIcon, PencilIcon, PlusIcon, SparklesIcon, TrashIcon, CheckIcon, XIcon, ChevronLeftIcon, SettingsIcon } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import React, { useState, useEffect } from 'react'
 import { useMutation, useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
@@ -12,7 +12,7 @@ import { Button } from './ui/button'
 import type { Id } from 'convex/_generated/dataModel'
 import { useTheme } from './ThemeProvider'
 
-const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactNode, currentChatId?: Id<"chats"> | null }) => {
+const LayoutWithSidebar = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter()
   const { user, isLoaded } = useUser()
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -20,6 +20,10 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
   const [localChats, setLocalChats] = useState<{ id: string, title: string }[]>([])
   const [renamingChatId, setRenamingChatId] = useState<string | null>(null)
   const [renameInput, setRenameInput] = useState("")
+
+  const pathname = usePathname()
+  const isChatPage = pathname.startsWith("/chat")
+  const chatId = isChatPage ? pathname.split("/")[2] as Id<"chats"> : null
 
   const { colorTheme } = useTheme()
 
@@ -49,19 +53,19 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
 
   useEffect(() => {
     if (user) {
-      if (chats && chats.length > 0 && currentChatId && chats.find((chat) => chat._id === currentChatId)) {
+      if (chats && chats.length > 0 && chatId && chats.find((chat) => chat._id === chatId)) {
         setChatFound(true)
       } else {
         setChatFound(false)
       }
     } else {
-      if (localChats && localChats.length > 0 && currentChatId && localChats.find((chat) => chat.id === currentChatId)) {
+      if (localChats && localChats.length > 0 && chatId && localChats.find((chat) => chat.id === chatId)) {
         setChatFound(true)
       } else {
         setChatFound(false)
       }
     }
-  }, [chats, localChats, currentChatId, user])
+  }, [chats, localChats, chatId, user])
 
   // Check if we're on mobile and close sidebar automatically
   useEffect(() => {
@@ -137,7 +141,7 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
   const handleDeleteChat = (chatId: string) => {
     if (user) {
       deleteChat({ id: chatId as Id<"chats"> })
-      if (chatId === currentChatId) {
+      if (chatId === chatId) {
         router.push("/")
       }
     } else {
@@ -146,7 +150,7 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
       localStorage.setItem("open3:chatIds", JSON.stringify(updatedChatIds))
       localStorage.removeItem(`open3:chat:${chatId}`)
       setLocalChats(chats => chats.filter(chat => chat.id !== chatId))
-      if (chatId === currentChatId) {
+      if (chatId === chatId) {
         router.push("/")
       }
     }
@@ -174,10 +178,20 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
             </SidebarHeader>
             <SidebarContent className="bg-neutral-950 overflow-y-auto">
               <SidebarGroup className="flex flex-col mt-4 gap-1">
-                <SidebarGroupLabel className="text-white text-lg font-semibold px-4 mb-4">My Chats</SidebarGroupLabel>
                 <SidebarGroupContent className="flex flex-col gap-2">
-                  {displayChats && displayChats.length > 0 ? displayChats.map((chat) => (
-                    currentChatId === (user ? chat._id : chat.id) ? (
+                  <SidebarMenuItem className="flex flex-row items-center gap-2" onClick={makeNewChat}>
+                    <SidebarMenuButton className={chatFound ? 'flex flex-row items-center justify-between bg-transparent hover:bg-neutral-800 hover:border-accent/20 text-white hover:text-white rounded-md p-2 py-5 ml-2 max-w-full w-full cursor-pointer transition-all' : `flex flex-row items-center gap-2 bg-accent/10 hover:bg-accent/20 text-white hover:text-white rounded-md p-2 py-5 ml-2 w-full cursor-pointer transition-all border border-accent/20 ${colorTheme}-glow-sm`}>
+                      <div className="flex flex-row items-center gap-1 h-full">
+                        <PlusIcon className="size-5 text-accent" />
+                        <span>New Chat</span>
+                      </div>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+
+                  <SidebarGroupLabel className="text-white text-lg font-semibold px-4">My Chats</SidebarGroupLabel>
+                  
+                  {displayChats && displayChats.length > 0 ? displayChats.reverse().map((chat) => (
+                    chatId === (user ? chat._id : chat.id) ? (
                       <SidebarMenuItem key={user ? chat._id : chat.id} className="flex flex-row items-center gap-2" onClick={() => {
                         router.push(`/chat/${user ? chat._id : chat.id}`)
                         if (isMobile) {
@@ -331,27 +345,18 @@ const LayoutWithSidebar = ({ children, currentChatId }: { children: React.ReactN
                       <span className="w-full mt-1 p-4 text-neutral-400 text-md text-center">No chats found</span>
                     </SidebarMenuItem>
                   )}
-
-                  <SidebarMenuItem className="flex flex-row items-center gap-2" onClick={makeNewChat}>
-                    <SidebarMenuButton className={chatFound ? 'flex flex-row items-center justify-between bg-transparent hover:bg-neutral-800 hover:border-accent/20 text-white hover:text-white rounded-md p-2 py-5 ml-2 max-w-full w-full cursor-pointer transition-all' : `flex flex-row items-center gap-2 bg-accent/10 hover:bg-accent/20 text-white hover:text-white rounded-md p-2 py-5 ml-2 w-full cursor-pointer transition-all border border-accent/20 ${colorTheme}-glow-sm`}>
-                      <div className="flex flex-row items-center gap-1 h-full">
-                        <PlusIcon className="size-5 text-accent" />
-                        <span>New Chat</span>
-                      </div>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
                 </SidebarGroupContent>
               </SidebarGroup>
             </SidebarContent>
             <SidebarFooter className="bg-neutral-950 border-t border-neutral-700/50 p-4 flex flex-row items-center justify-center gap-0">
               <SignedOut>
                 <SignInButton mode="modal">
-                  <div className="flex flex-row items-center gap-2 justify-center cursor-pointer w-auto hover:text-accent transition-colors pr-4 border-r-1 border-neutral-700">
+                  <div className="flex flex-row items-center gap-2 justify-center cursor-pointer w-auto hover:text-accent transition-colors pr-4 border-r-1 border-neutral-700 text-neutral-100">
                     <LogInIcon className="size-4" />
                     <span>Sign In</span>
                   </div>
                 </SignInButton>
-                <div className='pl-4 m-0 hover:text-accent cursor-pointer' onClick={() => router.push('/settings')}>
+                <div className='pl-4 m-0 hover:text-accent cursor-pointer text-neutral-100' onClick={() => router.push('/settings')}>
                   <SettingsIcon className='size-5' />
                 </div>
               </SignedOut>

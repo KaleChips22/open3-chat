@@ -46,13 +46,25 @@ const themes = [
 ]
 
 const SettingsPage = () => {
-  const { colorTheme, setColorTheme } = useTheme()
+  const { colorTheme, setColorTheme, darkMode, setDarkMode } = useTheme()
   const { user } = useUser()
   const { signOut } = useClerk()
   const router = useRouter()
 
-  const settings = useQuery(api.userSettings.get, user ? { clerkId: user.id } : "skip")
+  const [settings, setSettings] = useState<any | null>(null)
+  const settingsQuery = useQuery(api.userSettings.get, user ? { clerkId: user.id } : "skip")
   const updateSettings = useMutation(api.userSettings.update)
+
+  useEffect(() => {
+    if (user) {
+      setSettings(settingsQuery)
+    } else {
+      setSettings({
+        colorTheme: window.localStorage.getItem("open3:colorTheme") || "purple",
+        darkMode: JSON.parse(window.localStorage.getItem("open3:darkMode") || "false")
+      })
+    }
+  }, [settingsQuery, user])
 
   const [codeTheme, setCodeTheme] = useState(settings?.codeTheme || "dark-plus")
   const [customPrompt, setCustomPrompt] = useState(settings?.customPrompt || false)
@@ -134,8 +146,26 @@ const SettingsPage = () => {
     }
   }
 
+  const handleDarkModeChange = (checked: boolean) => {
+    setDarkMode(!checked)
+    if (user) {
+      updateSettings({ clerkId: user.id, darkMode: !checked })
+    } else {
+      localStorage.setItem("open3:darkMode", (!checked).toString())
+    }
+  }
+
+  const handleColorThemeChange = (value: string) => {
+    setColorTheme(value as any)
+    if (user) {
+      updateSettings({ clerkId: user.id, colorTheme: value as any })
+    } else {
+      localStorage.setItem("open3:colorTheme", value)
+    }
+  }
+
   return (
-    <LayoutWithSidebar currentChatId={null}>
+    <>
       <div className="h-full w-full flex flex-col bg-neutral-950 text-neutral-100 relative">
         <BackgroundEffects variant="dark" />
 
@@ -192,7 +222,7 @@ const SettingsPage = () => {
               <CardDescription className='text-neutral-400 text-md'>Choose your preferred theme color</CardDescription>
             </CardHeader>
             <CardContent>
-              <RadioGroup value={colorTheme} onValueChange={(value) => setColorTheme(value as any)} className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              <RadioGroup value={colorTheme} onValueChange={handleColorThemeChange} className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 {themes.map((theme) => (
                   <div key={theme.id}>
                     <RadioGroupItem value={theme.id} id={theme.id} className="peer sr-only" />
@@ -216,6 +246,15 @@ const SettingsPage = () => {
               <CardDescription className='text-neutral-400 text-md'>Customize how Open3 Chat looks</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Dark Theme */}
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className='text-neutral-100 text-md'>Dark Theme</Label>
+                  <p className="text-sm text-neutral-400">Choose your preferred dark theme</p>
+                </div>
+                <Switch checked={!darkMode} onCheckedChange={handleDarkModeChange} />
+              </div>
+              {/* Code Theme */}
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label className='text-neutral-100 text-md'>Code Theme</Label>
@@ -287,7 +326,7 @@ const SettingsPage = () => {
           </Card>
         </div>
       </div>
-    </LayoutWithSidebar>
+    </>
   )
 }
 

@@ -18,7 +18,7 @@
   </defs>
   
   <!-- Background -->
-  <rect width="100%" height="100%" fill="#121212" />
+  <rect width="100%" height="100%" fill="transparent" />
   
   <!-- Blurred Orbs -->
   <g filter="url(#blur)">

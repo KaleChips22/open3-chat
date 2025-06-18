@@ -491,7 +491,7 @@ export default function Chat({ id }: { id: string }) {
 const UserMessage = ({ message }: { message: { content: string } }) => {
   return (
     <div className="flex justify-end user-message">
-      <div className="max-w-[60%] bg-neutral-800 border border-accent/20 text-neutral-100 rounded-2xl px-4 py-3">
+      <div className="max-w-[60%] bg-neutral-900 border border-accent/20 text-neutral-50 rounded-2xl px-4 py-3">
         <div className="whitespace-pre-wrap break-words text-sm leading-relaxed">
           {applyUserCodeBlocks(message.content)}
         </div>
@@ -588,9 +588,9 @@ const applyUserCodeBlocks = (message: string) => {
               />
             </div>
           </div>
-            <CodeBlock lang={language as BundledLanguage}>
-              {chunk}
-            </CodeBlock>
+          <CodeBlock lang={language as BundledLanguage}>
+            {chunk}
+          </CodeBlock>
         </div>
       })}
     </>
