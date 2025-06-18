@@ -12,18 +12,12 @@ const UserMessage = (
   }: {
     message: { content: string },
     onMessageRegenerate: () => void,
-    onMessageEdit: (message: string) => void,
+    onMessageEdit: (newMessage: string) => void,
     onMessageBranch: () => void
   }
 ) => {
   const [isEditing, setIsEditing] = useState(false)
   const [editedMessage, setEditedMessage] = useState(message.content)
-
-  useEffect(() => {
-    if (!isEditing && editedMessage !== message.content) {
-      onMessageEdit(editedMessage)
-    }
-  }, [message, isEditing])
 
   const messageActions = [
     {
@@ -45,8 +39,8 @@ const UserMessage = (
   ]
   
   return (
-    <div className="flex justify-end user-message w-full">
-      <div className="max-w-[60%] flex flex-col gap-2 group/userMessage items-end">
+    <div className="flex justify-end user-message w-full group/userMessage">
+      <div className="max-w-[60%] flex flex-col gap-2 items-end">
         <div className={"w-fit bg-neutral-900 border-t border-t-accent/30 border-b border-b-accent/15 text-neutral-50 " + (isEditing ? "p-2 rounded-xl" : "p-4 rounded-lg")}>
           <div className="whitespace-pre-wrap break-words text-sm leading-relaxed">
             {isEditing ? (
@@ -61,7 +55,10 @@ const UserMessage = (
         <div className="flex flex-row items-center justify-end gap-2 w-full">
           {isEditing ? (
             <div className="flex flex-row items-center justify-end gap-2 w-full">
-              <CheckIcon className="size-8 text-accent hover:text-white cursor-pointer p-2 hover:bg-neutral-800 rounded-md" onClick={() => setIsEditing(false)} />
+              <CheckIcon className="size-8 text-accent hover:text-white cursor-pointer p-2 hover:bg-neutral-800 rounded-md" onClick={() => {
+                setIsEditing(false)
+                onMessageEdit(editedMessage)
+              }} />
               <XIcon className="size-8 text-accent hover:text-white cursor-pointer p-2 hover:bg-neutral-800 rounded-md" onClick={() => {
                 setEditedMessage(message.content)
                 setIsEditing(false)

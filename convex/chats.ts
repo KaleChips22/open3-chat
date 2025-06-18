@@ -76,3 +76,43 @@ export const deleteChat = mutation({
     await ctx.db.delete(args.id)
   }
 })
+
+export const branchChat = mutation({
+  args: {
+    clerkId: v.string(),
+    chatId: v.id("chats"),
+    messageId: v.id("messages")
+  },
+  handler: async (ctx, args) => {
+    const oldChat = await ctx.db.get(args.chatId)
+
+    const newChat = await ctx.db.insert("chats", {
+      title: "Branch of: " + oldChat!.title,
+      clerkId: args.clerkId,
+      hasBeenRenamed: false,
+    })
+
+    const baseMessage = await ctx.db.get(args.messageId)
+
+    const messagesToSend = (await ctx.db
+      .query("messages")
+      .withIndex("by_chat", (q) => q.eq("chatId", args.chatId))
+      .collect())
+      .filter((m) => m._creationTime < baseMessage!._creationTime)
+    
+    for (const message of messagesToSend) {
+      await ctx.db.insert("messages", {
+        chatId: newChat,
+        content: message.content,
+        role: message.role,
+        model: message.model,
+        isComplete: message.isComplete,
+        reasoning: message.reasoning,
+      })
+    }
+
+
+
+    return newChat
+  }
+})
