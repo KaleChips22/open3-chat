@@ -11,7 +11,7 @@ import { api } from "../../convex/_generated/api"
 import type { Id } from "../../convex/_generated/dataModel"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useUser } from "@clerk/nextjs"
-import { pushUserMessage, pushLocalUserMessage } from "@/actions/pushUserMessage"
+import { pushUserMessage, pushLocalUserMessage } from "@/actions/handleMessages"
 import Markdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import BackgroundEffects from "./BackgroundEffects"
@@ -52,7 +52,7 @@ export default function Chat({ id }: { id: string }) {
   const [selectedModel, setSelectedModel] = useLocalStorage("open3:selectedModel", 0)
 
   useEffect(() => {
-    if (selectedModel > models.length) {
+    if (selectedModel >= models.length) {
       setSelectedModel(0)
     }
   }, [selectedModel, models])
@@ -137,11 +137,14 @@ export default function Chat({ id }: { id: string }) {
       const isNewChatFromHome = localChat.messages.length === 2 && 
                                previousMessage.role === "user" && 
                                lastMessage.role === "assistant" &&
-                               lastMessage.content === "" &&
-                               messageAge < 1000;
+                               lastMessage.content === "";
 
-      // If it's not a new chat from home page and the message is too recent, skip
-      if (!isNewChatFromHome && messageAge < 1000) return;
+      // For new chats from home page, allow a longer time window (5 seconds)
+      // For other cases, use a shorter time window (1 second) to prevent duplicate streaming
+      const timeWindow = isNewChatFromHome ? 5000 : 1000;
+      
+      // If the message is too recent and it's not a new chat from home page, skip
+      if (!isNewChatFromHome && messageAge < timeWindow) return;
 
       // Check if this message is already being handled by handleSubmit
       if (lastMessage._id === lastMessageId) return;
@@ -155,7 +158,18 @@ export default function Chat({ id }: { id: string }) {
         
         try {
           const userBYOK = window.localStorage.getItem("open3:openRouterApiKey")
-          const chunks = await pushLocalUserMessage(id, previousMessage.content, lastMessage.model, localChat, userBYOK, {
+          
+          // Filter out empty assistant messages to avoid sending them to the API
+          const messagesForApi = localChat.messages.filter(msg => 
+            msg.role === "user" || (msg.role === "assistant" && msg.content !== "")
+          )
+          
+          const chatDataForApi = {
+            ...localChat,
+            messages: messagesForApi
+          }
+          
+          const chunks = await pushLocalUserMessage(id, previousMessage.content, models[selectedModel]!.id, chatDataForApi, userBYOK, {
             customPrompt: JSON.parse(window.localStorage.getItem("open3:customPrompt") || "false"),
             customPromptText: window.localStorage.getItem("open3:customPromptText") || ""
           })
@@ -193,7 +207,7 @@ export default function Chat({ id }: { id: string }) {
             localStorage.setItem(`open3:chat:${id}`, JSON.stringify(updatedChat))
             
             // Add a small delay between chunks to simulate streaming
-            await new Promise(resolve => setTimeout(resolve, 10))
+            // await new Promise(resolve => setTimeout(resolve, 10))
           }
 
           // Only mark as complete if we're still streaming (weren't cancelled)
@@ -298,12 +312,11 @@ export default function Chat({ id }: { id: string }) {
       pushUserMessage(id as Id<"chats">, message, models[selectedModel]!.id, user.id)
     } else {
       // Get user settings from local storage
-      const userSettings = JSON.parse(localStorage.getItem("open3:userSettings") || "{}")
       const userBYOK = window.localStorage.getItem("open3:openRouterApiKey")
 
       const systemPromptDetails = {
-        customPrompt: userSettings?.customPrompt || false,
-        customPromptText: userSettings?.customPromptText || ""
+        customPrompt: JSON.parse(window.localStorage.getItem("open3:customPrompt") || "false"),
+        customPromptText: window.localStorage.getItem("open3:customPromptText") || ""
       }
 
       // Handle unauthenticated user message

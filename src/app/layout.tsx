@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   title: "Open3 Chat",
   description: "An open source LLM chat application built for Theo's T3 Chat Cloneathon",
   authors: [{ name: "Kale", url: "https://github.com/KaleChips22" }],
-  icons: [{ rel: "icon", url: "/favicon.ico" }],
+  icons: [{ rel: "icon", url: "/favicon.ico" }, { rel: "apple-touch-icon", url: "/favicon.png" }],
   // viewport: {
   //   width: 'device-width',
   //   initialScale: 1,

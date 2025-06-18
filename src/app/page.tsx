@@ -1,6 +1,6 @@
 "use client"
 
-import { pushUserMessage } from "@/actions/pushUserMessage"
+import { pushUserMessage } from "@/actions/handleMessages"
 import BackgroundEffects from "@/components/BackgroundEffects"
 import LayoutWithSidebar from "@/components/LayoutWithSidebar"
 import { useUser } from "@clerk/nextjs"
@@ -46,7 +46,7 @@ const HomePage = () => {
         messages: Array<{
           role: "user" | "assistant";
           content: string;
-          model: string;
+          model?: string;
           timestamp?: string;
           _id?: string;
           isComplete?: boolean;
@@ -68,7 +68,7 @@ const HomePage = () => {
           _id: userMessageId,
           role: "user",
           content: firstMessage,
-          model: selectedModelData.id,
+          model: undefined,
           timestamp: new Date().toISOString()
         })
 

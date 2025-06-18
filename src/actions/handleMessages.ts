@@ -7,28 +7,15 @@ import { fetchMutation, fetchQuery } from "convex/nextjs";
 import { revalidatePath } from "next/cache";
 import { generateNextCompletion } from "@/models/index";
 
-// Define our own types since we're having import issues
 enum StreamPartType {
   TextDelta = 'text-delta',
   Reasoning = 'reasoning'
-}
-
-interface StreamPart {
-  type: StreamPartType | string;
-  textDelta: string;
-}
-
-interface Delta {
-  content?: string;
-  reasoning?: string;
 }
 
 export async function pushUserMessage(chatId: Id<"chats">, content: string, modelName: string, clerkId: string) {
   const chat = await fetchQuery(api.chats.getChat, {
     id: chatId
   })
-
-  // console.log(modelName)
 
   const newUserMessage = await fetchMutation(api.messages.createMessage, {
     chatId,
@@ -143,7 +130,6 @@ export async function* pushLocalUserMessage(
     return
   }
 
-  // Process the stream from Vercel AI SDK
   for await (const chunk of aiResponse.fullStream) {
     if (!chunk) continue
 
