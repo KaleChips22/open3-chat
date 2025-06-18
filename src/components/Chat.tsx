@@ -372,7 +372,7 @@ export default function Chat({ id }: { id: string }) {
     }
   }, [])
 
-  // Scroll only when messages change or when a new message is added
+  // Scroll only when messages change or when a new message is added (for authenticated users)
   useEffect(() => {
     if (!messages || messages.length === 0) return
     
@@ -402,9 +402,39 @@ export default function Chat({ id }: { id: string }) {
     }
   }, [messages, previousMessagesLength, previousLastMessageContent, userHasScrolled])
 
+  // Scroll for local chat messages (unauthenticated users)
+  useEffect(() => {
+    if (!localChat?.messages || localChat.messages.length === 0) return
+    
+    // Check if messages length changed (new message added)
+    const messagesChanged = localChat.messages.length !== previousMessagesLength
+    
+    // Check if the last message content changed (streaming update)
+    const lastMessage = localChat.messages[localChat.messages.length - 1]
+    const lastMessageContentChanged = lastMessage && 
+      lastMessage.content !== previousLastMessageContent
+    
+    // Update previous values for next comparison
+    setPreviousMessagesLength(localChat.messages.length)
+    if (lastMessage) {
+      setPreviousLastMessageContent(lastMessage.content)
+    }
+    
+    // Only scroll if messages changed and user hasn't manually scrolled up
+    // Or if the user is at the bottom already
+    if ((messagesChanged || lastMessageContentChanged) && !userHasScrolled) {
+      scrollToBottom()
+    }
+    
+    // Reset userHasScrolled when a new message is added (not just content updated)
+    if (messagesChanged) {
+      setUserHasScrolled(false)
+    }
+  }, [localChat, previousMessagesLength, previousLastMessageContent, userHasScrolled])
+
   // Initial scroll
   useEffect(() => {
-    if (messages && messages.length > 0) {
+    if ((messages && messages.length > 0) || (localChat?.messages && localChat.messages.length > 0)) {
       scrollToBottom()
     }
   }, [])
@@ -988,8 +1018,10 @@ export default function Chat({ id }: { id: string }) {
         }
       }
 
+      const oldChat = JSON.parse(localStorage.getItem(`open3:chat:${id}`) || "{}")
+
       const newChat = {
-        title: "New Chat",
+        title: "Branch of: " + oldChat.title,
         messages: messagesToSend
       }
       localStorage.setItem(`open3:chat:${newChatId}`, JSON.stringify(newChat))
