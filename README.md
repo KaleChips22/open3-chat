@@ -18,9 +18,3 @@ Open3 Chat uses convex as its database, due to the live syncing of convex.
 
 ### Backend
 The backend is composed entirely of next.js server actions and convex functions 
-
-## Todo
-
-- [ ] Try to get chat branching to work
-
-#### **Last Updated: 06/14/2025,  01:13 PM**
