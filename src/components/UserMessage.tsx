@@ -1,5 +1,5 @@
 import { CheckIcon, CopyIcon, EditIcon, GitBranchIcon, RefreshCcwIcon, XIcon } from "lucide-react"
-import React, { useEffect, useState, useRef, memo, useMemo, useCallback } from "react"
+import React, { useEffect, useState, useRef, memo } from "react"
 import CodeBlock from "./CodeBlock"
 import type { BundledLanguage } from "shiki"
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip"
@@ -30,15 +30,15 @@ const UserMessage = memo((
   }, [isEditing])
 
   // Adjust textarea height to fit content
-  const adjustTextareaHeight = useCallback(() => {
+  const adjustTextareaHeight = () => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto'
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`
     }
-  }, [])
+  }
 
   // Handle keyboard shortcuts
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Escape') {
       setEditedMessage(message.content)
       setIsEditing(false)
@@ -49,10 +49,9 @@ const UserMessage = memo((
     
     // Resize textarea as user types
     setTimeout(adjustTextareaHeight, 0)
-  }, [adjustTextareaHeight, editedMessage, message.content, onMessageEdit])
+  }
 
-  // Memoize message actions to prevent re-renders
-  const messageActions = useMemo(() => [
+  const messageActions = [
     {
       icon: RefreshCcwIcon,
       onClick: onMessageRegenerate,
@@ -73,23 +72,8 @@ const UserMessage = memo((
       onClick: () => navigator.clipboard.writeText(message.content),
       tooltip: "Copy message"
     },
-  ], [message.content, onMessageRegenerate, onMessageBranch])
+  ]
   
-  // Memoize the rendered code blocks
-  const renderedContent = useMemo(() => {
-    return isEditing ? null : applyUserCodeBlocks(message.content)
-  }, [isEditing, message.content])
-  
-  const handleSave = useCallback(() => {
-    setIsEditing(false)
-    onMessageEdit(editedMessage)
-  }, [editedMessage, onMessageEdit])
-  
-  const handleCancel = useCallback(() => {
-    setEditedMessage(message.content)
-    setIsEditing(false)
-  }, [message.content])
-
   return (
     <div className="flex justify-end user-message w-full group/userMessage">
       <div className="max-w-[60%] flex flex-col gap-2 items-end">
@@ -107,7 +91,7 @@ const UserMessage = memo((
                 onKeyDown={handleKeyDown}
                 placeholder="Edit your message..."
               />
-            ) : renderedContent}
+            ) : applyUserCodeBlocks(message.content)}
           </div>
         </div>
         <div className="flex flex-row items-center justify-end gap-2 w-full">
@@ -120,7 +104,10 @@ const UserMessage = memo((
                 <TooltipTrigger asChild>
                   <CheckIcon 
                     className="size-8 text-accent hover:text-white cursor-pointer p-2 hover:bg-neutral-800 rounded-md" 
-                    onClick={handleSave}
+                    onClick={() => {
+                      setIsEditing(false)
+                      onMessageEdit(editedMessage)
+                    }}
                   />
                 </TooltipTrigger>
                 <TooltipContent>Save changes</TooltipContent>
@@ -129,7 +116,10 @@ const UserMessage = memo((
                 <TooltipTrigger asChild>
                   <XIcon 
                     className="size-8 text-accent hover:text-white cursor-pointer p-2 hover:bg-neutral-800 rounded-md" 
-                    onClick={handleCancel}
+                    onClick={() => {
+                      setEditedMessage(message.content)
+                      setIsEditing(false)
+                    }}
                   />
                 </TooltipTrigger>
                 <TooltipContent>Cancel</TooltipContent>
@@ -152,26 +142,11 @@ const UserMessage = memo((
   )
 })
 
-// Memoize the code block rendering function
-const MemoizedCodeBlock = memo(({ language, content }: { language: string, content: string }) => (
-  <div className="flex flex-col gap-0">
-    <div className="py-2 px-4 text-sm text-[oklch(0.80_0.05_300)] bg-neutral-800 flex items-center justify-between">
-      <span>{language}</span>
-      <div>
-        <CopyIcon
-          className="h-full aspect-square hover:bg-zinc-700 p-1.25 rounded-sm cursor-pointer hover:text-zinc-100 transition-all"
-          onClick={() => navigator.clipboard.writeText(content)}
-        />
-      </div>
-    </div>
-    <CodeBlock lang={language as BundledLanguage} key={`${language}-${content.substring(0, 50)}`}>
-      {content}
-    </CodeBlock>
-  </div>
-))
-
 const applyUserCodeBlocks = (message: string) => {
+  // let res = message
+
   let chunks = message.split('```')
+
   if (chunks.length === 0) return message
 
   return (
@@ -180,13 +155,29 @@ const applyUserCodeBlocks = (message: string) => {
         if (index % 2 === 0) return <React.Fragment key={index}>{chunk}</React.Fragment>
 
         const language = (chunk.match(/^[a-z]*\n/i) || ['text'])[0].replace('\n', '')
-        let content = chunk
-        
-        if (language !== 'text') {
-          content = chunk.replace(language + '\n', '')
-        }
 
-        return <MemoizedCodeBlock key={index} language={language} content={content} />
+        if (language !== 'text')
+          chunk = chunk.replace(language + '\n', '')
+
+        // return <CodeBlock key={index} lang={language as BundledLanguage}>
+        //   {chunk}
+        // </CodeBlock>
+
+        return <div key={index} className="flex flex-col gap-0">
+          <div className="py-2 px-4 text-sm text-[oklch(0.80_0.05_300)] bg-neutral-800 flex items-center justify-between">
+            <span>{language}</span>
+            <div>
+              <CopyIcon
+                className="h-full aspect-square hover:bg-zinc-700 p-1.25 rounded-sm cursor-pointer hover:text-zinc-100 transition-all"
+                //@ts-ignore
+                onClick={() => navigator.clipboard.writeText(chunk)}
+              />
+            </div>
+          </div>
+          <CodeBlock lang={language as BundledLanguage}>
+            {chunk}
+          </CodeBlock>
+        </div>
       })}
     </>
   )
