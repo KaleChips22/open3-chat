@@ -444,7 +444,7 @@ export default function Chat({ id }: { id: string }) {
         _id: aiMessageId,
         role: "assistant",
         content: "",
-        timestamp: new Date(new Date().valueOf() + 100).toISOString(),
+        timestamp: new Date(new Date().valueOf() + 500).toISOString(),
         model: models[selectedModel]!.id,
         isComplete: false,
         reasoning: ""
@@ -557,7 +557,7 @@ export default function Chat({ id }: { id: string }) {
     if (user) {
       // For authenticated users
       // Find the index of the message to regenerate from
-      const messageIndex = messages?.findIndex(m => m._id === messageId) || -1
+      const messageIndex = messages?.findIndex(m => m._id === messageId) ?? -1
       if (messageIndex === -1) return
 
       // Get the message to regenerate from
@@ -784,12 +784,15 @@ export default function Chat({ id }: { id: string }) {
     if (user) {
       // For authenticated users
       // Find the index of the message to edit
-      const messageIndex = messages?.findIndex(m => m._id === messageId) || -1
+      // alert(messageId + '\n' + messages?.map(m => m._id ===).join(','))
+      const messageIndex = messages?.findIndex(m => m._id === messageId) ?? -1
       if (messageIndex === -1) return
+
 
       // Get the message to edit
       const messageToEdit = messages?.[messageIndex]
       if (!messageToEdit || messageToEdit.role !== "user") return
+
       
       // Get all messages that need to be deleted (the edited message and everything after it)
       const messagesToDelete = messages?.slice(messageIndex) || []

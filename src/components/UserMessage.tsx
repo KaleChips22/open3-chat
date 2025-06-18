@@ -2,6 +2,7 @@ import { CheckIcon, CopyIcon, EditIcon, GitBranchIcon, RefreshCcwIcon, XIcon } f
 import React, { useEffect, useState, useRef } from "react"
 import { CodeBlock } from "./CodeBlock"
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip"
+import type { BundledLanguage } from "shiki"
 
 const UserMessage = (
   {
@@ -128,7 +129,7 @@ const UserMessage = (
             <Tooltip key={index}>
               <TooltipTrigger asChild>
                 <action.icon 
-                  className="size-8 group-hover/userMessage:text-accent text-transparent group-hover/userMessage:hover:text-white cursor-pointer p-2 hover:bg-neutral-800 rounded-md" 
+                  className="size-8 text-accent hover:text-white cursor-pointer p-2 hover:bg-neutral-800 rounded-md" 
                   onClick={action.onClick}
                 />
               </TooltipTrigger>
