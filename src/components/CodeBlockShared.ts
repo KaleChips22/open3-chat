@@ -25,20 +25,30 @@ export async function highlight(code: string, lang: BundledLanguage, theme: stri
     keysToDelete.forEach(key => highlightCache.delete(key))
   }
   
-  // Highlight the code
-  const out = await codeToHast(code, {
-    lang,
-    theme,
-  })
+  try {
+    // Highlight the code
+    const out = await codeToHast(code, {
+      lang,
+      theme,
+    })
 
-  const result = toJsxRuntime(out, {
-    Fragment,
-    jsx,
-    jsxs,
-  }) as JSX.Element
-  
-  // Store in cache for future use
-  highlightCache.set(cacheKey, result)
-  
-  return result
+    const result = toJsxRuntime(out, {
+      Fragment,
+      jsx,
+      jsxs,
+    }) as JSX.Element
+    
+    // Store in cache for future use
+    highlightCache.set(cacheKey, result)
+    
+    return result
+  } catch (error) {
+    console.error('Error highlighting code:', error)
+    // Return a simple pre/code block as fallback
+    return jsx('pre', { 
+      children: jsx('code', { 
+        children: code 
+      }) 
+    }) as JSX.Element
+  }
 }

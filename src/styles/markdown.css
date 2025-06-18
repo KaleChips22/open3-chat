@@ -5,7 +5,7 @@
     font-family: 'Fira Code', monospace;
     background-color: var(--card);
     overflow: hidden;
-    border-radius: 0.5rem;
+    border-radius: 0 0 0.5rem 0.5rem;
     word-wrap: break-word;
     width: 100%;
     box-shadow: var(--shadow);
@@ -14,6 +14,7 @@
 
     div:first-child {
       color: oklch(0.75 0.10 var(--hue));
+      border-radius: 0.5rem 0.5rem 0 0;
     }
     
     pre {
@@ -223,10 +224,25 @@
       width: 100%;
       box-shadow: var(--shadow);
       margin-bottom: 1rem;
+      transition: opacity 0.2s ease-in-out;
 
       div:first-child {
         color: oklch(0.40 0.10 var(--hue));
         background-color: #cacaca;
+      }
+      
+      pre {
+        padding: 1rem;
+        padding-top: 0.5rem;
+        font-family: 'Fira Code', monospace;
+        transition: opacity 0.2s ease-in-out;
+      }
+      
+      code {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        font-family: 'Fira Code', monospace;
+        transition: opacity 0.2s ease-in-out;
       }
     }
   }
