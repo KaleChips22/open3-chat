@@ -10,6 +10,10 @@
     width: 100%;
     box-shadow: var(--shadow);
     margin-bottom: 1rem;
+
+    div:first-child {
+      color: oklch(0.75 0.10 var(--hue));
+    }
     
     pre {
       padding: 1rem;
@@ -194,5 +198,35 @@
   hr {
     border: 1px solid oklch(0.65 0.15 var(--hue, 300) / 0.2);
     margin: 2rem 0;
+  }
+}
+
+.dark {
+  .markdown,
+  .user-message {
+    div:has(pre) {
+      font-size: 1rem;
+      font-family: 'Fira Code', monospace;
+      background-color: var(--background);
+      overflow: hidden;
+      border-radius: 0.5rem;
+      word-wrap: break-word;
+      width: 100%;
+      box-shadow: var(--shadow);
+      margin-bottom: 1rem;
+
+      div:first-child {
+        color: oklch(0.25 0.10 var(--hue));
+      }
+    }
+  }
+
+  .markdown {
+    h1 { color: oklch(0.25 0.10 var(--hue, 300)); }
+    h2 { color: oklch(0.20 0.10 var(--hue, 300)); }
+    h3 { color: oklch(0.15 0.10 var(--hue, 300)); }
+    h4 { color: oklch(0.10 0.10 var(--hue, 300)); }
+    h5 { color: oklch(0.10 0.05 var(--hue, 300)); }
+    h6 { color: oklch(0.05 0.05 var(--hue, 300)); }
   }
 }

@@ -82,7 +82,7 @@
 }
 
 * {
-  transition: all 0.3s ease-in-out;
+  transition: color 0.3s, background-color 0.3s, border-color 0.3s, box-shadow 0.3s, fill 0.3s, stroke 0.3s;
 }
 
 .dark {

@@ -80,7 +80,7 @@ export default function ChatInput({
               {models.map((model, index) => (
                 <SelectItem disabled={!model.features.includes('free') && !customAPIKey} key={index} value={model.id} className="text-neutral-100 rounded-lg cursor-pointer active:bg-neutral-800">
                   <div className="flex flex-row items-center gap-2 justify-between">
-                    <Image src={model.icon} alt={model.name} className="size-4 not-dark:invert" width={16} height={16} />
+                    <Image src={model.icon} alt={model.name} className="size-4 dark:invert" width={16} height={16} />
                     {model.name}
                   </div>
                   {model.features && (

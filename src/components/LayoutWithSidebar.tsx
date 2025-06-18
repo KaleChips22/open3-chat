@@ -178,9 +178,19 @@ const LayoutWithSidebar = ({ children }: { children: React.ReactNode }) => {
             </SidebarHeader>
             <SidebarContent className="bg-neutral-950 overflow-y-auto">
               <SidebarGroup className="flex flex-col mt-4 gap-1">
-                <SidebarGroupLabel className="text-white text-lg font-semibold px-4 mb-4">My Chats</SidebarGroupLabel>
                 <SidebarGroupContent className="flex flex-col gap-2">
-                  {displayChats && displayChats.length > 0 ? displayChats.map((chat) => (
+                  <SidebarMenuItem className="flex flex-row items-center gap-2" onClick={makeNewChat}>
+                    <SidebarMenuButton className={chatFound ? 'flex flex-row items-center justify-between bg-transparent hover:bg-neutral-800 hover:border-accent/20 text-white hover:text-white rounded-md p-2 py-5 ml-2 max-w-full w-full cursor-pointer transition-all' : `flex flex-row items-center gap-2 bg-accent/10 hover:bg-accent/20 text-white hover:text-white rounded-md p-2 py-5 ml-2 w-full cursor-pointer transition-all border border-accent/20 ${colorTheme}-glow-sm`}>
+                      <div className="flex flex-row items-center gap-1 h-full">
+                        <PlusIcon className="size-5 text-accent" />
+                        <span>New Chat</span>
+                      </div>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+
+                  <SidebarGroupLabel className="text-white text-lg font-semibold px-4">My Chats</SidebarGroupLabel>
+                  
+                  {displayChats && displayChats.length > 0 ? displayChats.reverse().map((chat) => (
                     chatId === (user ? chat._id : chat.id) ? (
                       <SidebarMenuItem key={user ? chat._id : chat.id} className="flex flex-row items-center gap-2" onClick={() => {
                         router.push(`/chat/${user ? chat._id : chat.id}`)
@@ -335,15 +345,6 @@ const LayoutWithSidebar = ({ children }: { children: React.ReactNode }) => {
                       <span className="w-full mt-1 p-4 text-neutral-400 text-md text-center">No chats found</span>
                     </SidebarMenuItem>
                   )}
-
-                  <SidebarMenuItem className="flex flex-row items-center gap-2" onClick={makeNewChat}>
-                    <SidebarMenuButton className={chatFound ? 'flex flex-row items-center justify-between bg-transparent hover:bg-neutral-800 hover:border-accent/20 text-white hover:text-white rounded-md p-2 py-5 ml-2 max-w-full w-full cursor-pointer transition-all' : `flex flex-row items-center gap-2 bg-accent/10 hover:bg-accent/20 text-white hover:text-white rounded-md p-2 py-5 ml-2 w-full cursor-pointer transition-all border border-accent/20 ${colorTheme}-glow-sm`}>
-                      <div className="flex flex-row items-center gap-1 h-full">
-                        <PlusIcon className="size-5 text-accent" />
-                        <span>New Chat</span>
-                      </div>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
                 </SidebarGroupContent>
               </SidebarGroup>
             </SidebarContent>
