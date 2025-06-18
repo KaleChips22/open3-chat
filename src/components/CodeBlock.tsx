@@ -1,5 +1,4 @@
 import { useLayoutEffect, useReducer, useState, type JSX } from 'react'
-import { memo, useLayoutEffect, useReducer, useState, type JSX } from 'react'
 import { highlight } from './CodeBlockShared'
 import type { BundledLanguage } from 'shiki'
 import { useQuery } from 'convex/react'
@@ -15,7 +14,6 @@ export function CodeBlock({ initial, children, lang }: { initial?: JSX.Element, 
     return action
   }
 
-  const [nodes, setNodes] = useReducer(reducer, initial ?? <></>)
   const [nodes, setNodes] = useReducer(reducer, initial ?? <pre><code>{children}</code></pre>)
 
   useLayoutEffect(() => {
