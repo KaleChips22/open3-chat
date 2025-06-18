@@ -1,6 +1,12 @@
 .markdown,
 .user-message {
-  div:has(pre) {
+  width: 100%;
+
+  & div:not(:has(svg, img)) {
+    width: 100%;
+  }
+  
+  div:has(> pre) {
     font-size: 1rem;
     font-family: 'Fira Code', monospace;
     background-color: var(--card);
@@ -204,10 +210,10 @@
 .dark {
   .markdown,
   .user-message {
-    div:has(pre) {
+    div:has(> pre){
       font-size: 1rem;
       font-family: 'Fira Code', monospace;
-      background-color: var(--background);
+      background-color: var(--card);
       overflow: hidden;
       border-radius: 0.5rem;
       word-wrap: break-word;
@@ -216,17 +222,63 @@
       margin-bottom: 1rem;
 
       div:first-child {
-        color: oklch(0.25 0.10 var(--hue));
+        color: oklch(0.40 0.10 var(--hue));
+        background-color: #cacaca;
       }
     }
   }
 
   .markdown {
-    h1 { color: oklch(0.25 0.10 var(--hue, 300)); }
-    h2 { color: oklch(0.20 0.10 var(--hue, 300)); }
-    h3 { color: oklch(0.15 0.10 var(--hue, 300)); }
-    h4 { color: oklch(0.10 0.10 var(--hue, 300)); }
-    h5 { color: oklch(0.10 0.05 var(--hue, 300)); }
-    h6 { color: oklch(0.05 0.05 var(--hue, 300)); }
+    h1 { color: oklch(0.60 0.10 var(--hue, 300)); }
+    h2 { color: oklch(0.55 0.10 var(--hue, 300)); }
+    h3 { color: oklch(0.50 0.10 var(--hue, 300)); }
+    h4 { color: oklch(0.45 0.10 var(--hue, 300)); }
+    h5 { color: oklch(0.40 0.05 var(--hue, 300)); }
+    h6 { color: oklch(0.35 0.05 var(--hue, 300)); }
+
+    hr { border: 1px solid oklch(0.35 0.10 var(--hue, 300) / 0.2); }
+
+    :not(pre) > code {
+      background-color: #cacaca;
+      border: 1px solid oklch(0.35 0.10 var(--hue, 300) / 0.2);
+      color: #000;
+    }
+  
+    li::before { color: oklch(0.35 0.10 var(--hue, 300)); }
+
+    a { color: oklch(0.35 0.10 var(--hue, 300)); }
+
+    blockquote {
+      border-left: 2px solid oklch(0.35 0.10 var(--hue, 300) / 0.5);
+      background-color: oklch(0.35 0.10 var(--hue, 300) / 0.05);
+    }
+
+    table {
+      border-collapse: collapse;
+  
+      thead {
+        background-color: #cacaca;
+  
+        tr { border: 1px solid oklch(0.35 0.10 var(--hue, 300) / 0.2);}
+  
+        th {
+          padding: 0.5rem;
+          border: 1px solid oklch(0.35 0.10 var(--hue, 300) / 0.2);
+        }
+      }
+  
+      tbody {
+        tr {
+          border: 1px solid oklch(0.35 0.10 var(--hue, 300) / 0.2);
+  
+          &:nth-child(even) { background-color: oklch(0.35 0.10 var(--hue, 300) / 0.05); }
+  
+          td {
+            padding: 0.5rem;
+            border: 1px solid oklch(0.35 0.10 var(--hue, 300) / 0.2);
+          }
+        }
+      }
+    }
   }
 }

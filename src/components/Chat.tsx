@@ -588,9 +588,9 @@ const applyUserCodeBlocks = (message: string) => {
               />
             </div>
           </div>
-            <CodeBlock lang={language as BundledLanguage}>
-              {chunk}
-            </CodeBlock>
+          <CodeBlock lang={language as BundledLanguage}>
+            {chunk}
+          </CodeBlock>
         </div>
       })}
     </>
