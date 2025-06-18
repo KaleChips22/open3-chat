@@ -1,11 +1,11 @@
-import { memo, useLayoutEffect, useReducer, useState, type JSX } from 'react'
+import { useLayoutEffect, useReducer, useState, type JSX } from 'react'
 import { highlight } from './CodeBlockShared'
 import type { BundledLanguage } from 'shiki'
 import { useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { useUser } from '@clerk/nextjs'
 
-const CodeBlock = memo(({ initial, children, lang }: { initial?: JSX.Element, children: string, lang: BundledLanguage }) => {
+export function CodeBlock({ initial, children, lang }: { initial?: JSX.Element, children: string, lang: BundledLanguage }) {
   const { user } = useUser()
   const settings = useQuery(api.userSettings.get, user ? { clerkId: user.id } : "skip")
   const codeTheme = settings?.codeTheme || "dark-plus"
@@ -21,6 +21,6 @@ const CodeBlock = memo(({ initial, children, lang }: { initial?: JSX.Element, ch
   }, [children, codeTheme])
 
   return nodes ?? <pre><code>{children}</code></pre>
-})
+}
 
-export default CodeBlock
+// export const CodeBlock = memo(codeblock)
