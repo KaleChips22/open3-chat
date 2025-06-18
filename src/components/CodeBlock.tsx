@@ -9,18 +9,27 @@ const CodeBlock = memo(({ initial, children, lang }: { initial?: JSX.Element, ch
   const { user } = useUser()
   const settings = useQuery(api.userSettings.get, user ? { clerkId: user.id } : "skip")
   const codeTheme = settings?.codeTheme || "dark-plus"
+  const [isLoading, setIsLoading] = useState(!initial)
 
   const reducer = (state: JSX.Element, action: JSX.Element) => {
     return action
   }
 
-  const [nodes, setNodes] = useReducer(reducer, initial ?? <></>)
+  const [nodes, setNodes] = useReducer(reducer, initial ?? <pre><code>{children}</code></pre>)
 
   useLayoutEffect(() => {
-    void highlight(children, lang, codeTheme).then(setNodes)
-  }, [children, codeTheme])
+    setIsLoading(true)
+    void highlight(children, lang, codeTheme).then((highlightedNodes) => {
+      setNodes(highlightedNodes)
+      setIsLoading(false)
+    })
+  }, [children, lang, codeTheme])
 
-  return nodes ?? <pre><code>{children}</code></pre>
+  return (
+    <div className={isLoading ? "opacity-100" : "opacity-100 transition-opacity duration-100"}>
+      {nodes}
+    </div>
+  )
 })
 
 export default CodeBlock
