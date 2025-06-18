@@ -40,10 +40,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${geist.variable} bg-black`}>
-      <head>
-        <link rel="apple-touch-icon" href="/favicon.png" />
-      </head>
+    <html lang="en" className={`${geist.variable}`}>
       <body className="min-h-screen w-full overflow-x-hidden">
         <TRPCReactProvider>
           <ConvexClientProvider>
