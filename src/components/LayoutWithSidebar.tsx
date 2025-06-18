@@ -364,7 +364,7 @@ const LayoutWithSidebar = ({ children }: { children: React.ReactNode }) => {
                 </SidebarGroupContent>
               </SidebarGroup>
             </SidebarContent>
-            <SidebarFooter className="bg-neutral-950 border-t border-neutral-700/50 p-4 flex flex-row items-center justify-center gap-0">
+            <SidebarFooter className="bg-neutral-950 border-t border-neutral-700/50 p-4 py-6 sm:py-4 flex flex-row items-center justify-center gap-0">
               <SignedOut>
                 <SignInButton mode="modal">
                   <div className="flex flex-row items-center gap-2 justify-center cursor-pointer w-auto hover:text-accent transition-colors pr-4 border-r-1 border-neutral-700 text-neutral-100">
