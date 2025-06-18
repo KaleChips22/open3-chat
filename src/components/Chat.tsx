@@ -15,6 +15,8 @@ import { pushUserMessage, pushLocalUserMessage } from "@/actions/handleMessages"
 import BackgroundEffects from "./BackgroundEffects"
 import useLocalStorage from "@/hooks/useLocalStorage"
 import ChatInput from "./ChatInput"
+import { fetchMutation, fetchQuery } from "convex/nextjs"
+import { generateNextCompletion } from "@/models/index"
 
 import '@/styles/markdown.css'
 import models from "@/models/models"
@@ -551,12 +553,401 @@ export default function Chat({ id }: { id: string }) {
     setUserHasScrolled(false) // Reset scroll position when sending a message
   }
 
-  const handleMessageRegenerate = (messageId: string) => {
-    alert(123)
+  const handleMessageRegenerate = async (messageId: string) => {
+    if (user) {
+      // For authenticated users
+      // Find the index of the message to regenerate from
+      const messageIndex = messages?.findIndex(m => m._id === messageId) || -1
+      if (messageIndex === -1) return
+
+      // Get the message to regenerate from
+      const messageToRegenerateFrom = messages?.[messageIndex]
+      if (!messageToRegenerateFrom || messageToRegenerateFrom.role !== "user") return
+
+      // Get all messages that need to be deleted (only the AI response after the user message)
+      const messagesToDelete = messages?.slice(messageIndex + 1) || []
+      
+      // Delete all messages after this user message (the AI responses)
+      for (const message of messagesToDelete) {
+        await fetchMutation(api.messages.deleteMessage, { id: message._id })
+      }
+      
+      // Create a new AI message directly instead of pushing a user message
+      const newAiMessage = await fetchMutation(api.messages.createMessage, {
+        chatId: id as Id<"chats">,
+        content: "",
+        role: "assistant",
+        model: models[selectedModel]!.id,
+        reasoning: ""
+      })
+
+      // Get the updated messages list (without the deleted AI responses)
+      const updatedMessages = await fetchQuery(api.messages.getMessagesForChat, {
+        chatId: id as Id<"chats">,
+      })
+
+      // Get user settings
+      const userSettings = await fetchQuery(api.userSettings.get, {
+        clerkId: user.id
+      })
+
+      const userBYOK = userSettings?.openRouterApiKey || null
+      const systemPromptDetails = {
+        customPrompt: userSettings?.customPrompt || false,
+        customPromptText: userSettings?.customPromptText || ""
+      }
+
+      // Generate the AI response
+      const aiResponse = await generateNextCompletion(
+        userBYOK !== null && userBYOK !== "" ? models[selectedModel]!.id : (models.find((val) => val.id === models[selectedModel]!.id)?.features.includes('free') ? models[selectedModel]!.id : 'deepseek/deepseek-chat-v3-0324:free'),
+        updatedMessages.map((message: any) => ({
+          role: message.role,
+          content: message.content
+        })),
+        userBYOK,
+        systemPromptDetails
+      )
+
+      if ('error' in aiResponse && aiResponse.error === true) {
+        await fetchMutation(api.messages.appendMessage, {
+          id: newAiMessage,
+          content: `Error processing your request: ${aiResponse.message}`
+        })
+        return
+      }
+
+      for await (const chunk of aiResponse.fullStream) {
+        if (!chunk) continue
+        
+        if (chunk.type === 'text-delta') {
+          await fetchMutation(api.messages.appendMessage, {
+            id: newAiMessage,
+            content: chunk.textDelta
+          })
+        } else if (chunk.type === 'reasoning') {
+          // Handle reasoning if the model provides it
+          await fetchMutation(api.messages.appendReasoning, {
+            id: newAiMessage,
+            reasoning: chunk.textDelta
+          })
+        }
+      }
+
+      await fetchMutation(api.messages.completeMessage, {
+        id: newAiMessage
+      })
+
+    } else {
+      // For unauthenticated users
+      if (!localChat) return
+
+      // Find the index of the message to regenerate from
+      const messageIndex = localChat.messages.findIndex(m => m._id === messageId)
+      if (messageIndex === -1) return
+
+      // Get the message to regenerate from
+      const messageToRegenerateFrom = localChat.messages[messageIndex]
+      if (!messageToRegenerateFrom || messageToRegenerateFrom.role !== "user") return
+
+      // Keep only messages up to and including the selected user message
+      const messagesToKeep = localChat.messages.slice(0, messageIndex + 1)
+      
+      // Update local chat with truncated messages
+      const updatedChat = {
+        ...localChat,
+        messages: messagesToKeep
+      }
+      
+      setLocalChat(updatedChat)
+      localStorage.setItem(`open3:chat:${id}`, JSON.stringify(updatedChat))
+
+      // Create AI message placeholder
+      const aiMessageId = generateId()
+      const aiMessage = {
+        _id: aiMessageId,
+        role: "assistant",
+        content: "",
+        timestamp: new Date(new Date().valueOf() + 100).toISOString(),
+        model: models[selectedModel]!.id,
+        isComplete: false,
+        reasoning: ""
+      }
+
+      // Add empty AI message to chat
+      const chatWithAiMessage = {
+        ...updatedChat,
+        messages: [...updatedChat.messages, aiMessage]
+      }
+      
+      setLocalChat(chatWithAiMessage)
+      localStorage.setItem(`open3:chat:${id}`, JSON.stringify(chatWithAiMessage))
+
+      // Set streaming state before starting response generation
+      isStreamingRef.current = true
+      setIsStreaming(true)
+      setLastMessageId(aiMessageId)
+
+      // Set global streaming state
+      setStreamingState({
+        chatId: id,
+        messageId: aiMessageId,
+        isStreaming: true,
+        content: "",
+        reasoning: ""
+      })
+
+      try {
+        // Get user settings from local storage
+        const userBYOK = window.localStorage.getItem("open3:openRouterApiKey")
+        const systemPromptDetails = {
+          customPrompt: JSON.parse(window.localStorage.getItem("open3:customPrompt") || "false"),
+          customPromptText: window.localStorage.getItem("open3:customPromptText") || ""
+        }
+
+        // Get AI response chunks
+        const chunks = await pushLocalUserMessage(
+          id, 
+          messageToRegenerateFrom.content, 
+          models[selectedModel]!.id,
+          updatedChat,
+          userBYOK,
+          systemPromptDetails
+        )
+        
+        let fullResponse = ""
+        let fullReasoning = ""
+        
+        for await (const chunk of chunks) {
+          if (!isStreamingRef.current) break // Stop if streaming was cancelled
+          
+          if (chunk.content) {
+            fullResponse += chunk.content
+          }
+          if (chunk.reasoning) {
+            fullReasoning += chunk.reasoning
+          }
+          
+          // Update global streaming state
+          setStreamingState({
+            chatId: id,
+            messageId: aiMessageId,
+            isStreaming: true,
+            content: fullResponse,
+            reasoning: fullReasoning
+          })
+          
+          // Update AI message with new content
+          const updatedMessages = chatWithAiMessage.messages.map(msg => 
+            msg._id === aiMessageId 
+              ? { 
+                  ...msg, 
+                  content: fullResponse,
+                  reasoning: fullReasoning
+                }
+              : msg
+          )
+          
+          const updatedChatWithResponse = {
+            ...chatWithAiMessage,
+            messages: updatedMessages
+          }
+          
+          setLocalChat(updatedChatWithResponse)
+          localStorage.setItem(`open3:chat:${id}`, JSON.stringify(updatedChatWithResponse))
+        }
+
+        // Mark the message as complete
+        const finalMessages = chatWithAiMessage.messages.map(msg => 
+          msg._id === aiMessageId 
+            ? { ...msg, isComplete: true, content: fullResponse, reasoning: fullReasoning }
+            : msg
+        )
+        
+        const finalChat = {
+          ...chatWithAiMessage,
+          messages: finalMessages
+        }
+        
+        setLocalChat(finalChat)
+        localStorage.setItem(`open3:chat:${id}`, JSON.stringify(finalChat))
+      } finally {
+        isStreamingRef.current = false
+        setIsStreaming(false)
+        setStreamingState(null) // Clear global streaming state
+      }
+    }
+
+    setUserHasScrolled(false) // Reset scroll position when regenerating a message
   }
 
-  const handleMessageEdit = (messageId: string, newMessage: string) => {
-    alert(123)
+  const handleMessageEdit = async (messageId: string, newMessage: string) => {
+    if (user) {
+      // For authenticated users
+      // Find the index of the message to edit
+      const messageIndex = messages?.findIndex(m => m._id === messageId) || -1
+      if (messageIndex === -1) return
+
+      // Get the message to edit
+      const messageToEdit = messages?.[messageIndex]
+      if (!messageToEdit || messageToEdit.role !== "user") return
+      
+      // Get all messages that need to be deleted (the edited message and everything after it)
+      const messagesToDelete = messages?.slice(messageIndex) || []
+      
+      // Delete all messages after and including the edited one
+      for (const message of messagesToDelete) {
+        await fetchMutation(api.messages.deleteMessage, { id: message._id })
+      }
+      
+      // Push the edited user message to trigger a new AI response
+      pushUserMessage(id as Id<"chats">, newMessage, models[selectedModel]!.id, user.id)
+    } else {
+      // For unauthenticated users
+      if (!localChat) return
+
+      // Find the index of the message to edit
+      const messageIndex = localChat.messages.findIndex(m => m._id === messageId)
+      if (messageIndex === -1) return
+
+      // Get the message to edit
+      const messageToEdit = localChat.messages[messageIndex]
+      if (!messageToEdit || messageToEdit.role !== "user") return
+
+      // Create a new message with the edited content but keep the same ID
+      const editedMessage = {
+        ...messageToEdit,
+        content: newMessage
+      }
+
+      // Keep only messages up to the edited message (exclusive)
+      const messagesToKeep = localChat.messages.slice(0, messageIndex)
+      
+      // Update local chat with truncated messages plus the edited message
+      const updatedChat = {
+        ...localChat,
+        messages: [...messagesToKeep, editedMessage]
+      }
+      
+      setLocalChat(updatedChat)
+      localStorage.setItem(`open3:chat:${id}`, JSON.stringify(updatedChat))
+
+      // Create AI message placeholder
+      const aiMessageId = generateId()
+      const aiMessage = {
+        _id: aiMessageId,
+        role: "assistant",
+        content: "",
+        timestamp: new Date(new Date().valueOf() + 100).toISOString(),
+        model: models[selectedModel]!.id,
+        isComplete: false,
+        reasoning: ""
+      }
+
+      // Add empty AI message to chat
+      const chatWithAiMessage = {
+        ...updatedChat,
+        messages: [...updatedChat.messages, aiMessage]
+      }
+      
+      setLocalChat(chatWithAiMessage)
+      localStorage.setItem(`open3:chat:${id}`, JSON.stringify(chatWithAiMessage))
+
+      // Set streaming state before starting response generation
+      isStreamingRef.current = true
+      setIsStreaming(true)
+      setLastMessageId(aiMessageId)
+
+      // Set global streaming state
+      setStreamingState({
+        chatId: id,
+        messageId: aiMessageId,
+        isStreaming: true,
+        content: "",
+        reasoning: ""
+      })
+
+      try {
+        // Get user settings from local storage
+        const userBYOK = window.localStorage.getItem("open3:openRouterApiKey")
+        const systemPromptDetails = {
+          customPrompt: JSON.parse(window.localStorage.getItem("open3:customPrompt") || "false"),
+          customPromptText: window.localStorage.getItem("open3:customPromptText") || ""
+        }
+
+        // Get AI response chunks
+        const chunks = await pushLocalUserMessage(
+          id, 
+          newMessage, 
+          models[selectedModel]!.id,
+          updatedChat,
+          userBYOK,
+          systemPromptDetails
+        )
+        
+        let fullResponse = ""
+        let fullReasoning = ""
+        
+        for await (const chunk of chunks) {
+          if (!isStreamingRef.current) break // Stop if streaming was cancelled
+          
+          if (chunk.content) {
+            fullResponse += chunk.content
+          }
+          if (chunk.reasoning) {
+            fullReasoning += chunk.reasoning
+          }
+          
+          // Update global streaming state
+          setStreamingState({
+            chatId: id,
+            messageId: aiMessageId,
+            isStreaming: true,
+            content: fullResponse,
+            reasoning: fullReasoning
+          })
+          
+          // Update AI message with new content
+          const updatedMessages = chatWithAiMessage.messages.map(msg => 
+            msg._id === aiMessageId 
+              ? { 
+                  ...msg, 
+                  content: fullResponse,
+                  reasoning: fullReasoning
+                }
+              : msg
+          )
+          
+          const updatedChatWithResponse = {
+            ...chatWithAiMessage,
+            messages: updatedMessages
+          }
+          
+          setLocalChat(updatedChatWithResponse)
+          localStorage.setItem(`open3:chat:${id}`, JSON.stringify(updatedChatWithResponse))
+        }
+
+        // Mark the message as complete
+        const finalMessages = chatWithAiMessage.messages.map(msg => 
+          msg._id === aiMessageId 
+            ? { ...msg, isComplete: true, content: fullResponse, reasoning: fullReasoning }
+            : msg
+        )
+        
+        const finalChat = {
+          ...chatWithAiMessage,
+          messages: finalMessages
+        }
+        
+        setLocalChat(finalChat)
+        localStorage.setItem(`open3:chat:${id}`, JSON.stringify(finalChat))
+      } finally {
+        isStreamingRef.current = false
+        setIsStreaming(false)
+        setStreamingState(null) // Clear global streaming state
+      }
+    }
+
+    setUserHasScrolled(false) // Reset scroll position when editing a message
   }
 
   const handleMessageBranch = async (messageId: string) => {
