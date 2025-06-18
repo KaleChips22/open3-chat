@@ -11,6 +11,7 @@ import { SignedIn, SignedOut, SignInButton, UserButton, useUser } from '@clerk/n
 import { Button } from './ui/button'
 import type { Id } from 'convex/_generated/dataModel'
 import { useTheme } from './ThemeProvider'
+import useLocalStorage from '@/hooks/useLocalStorage'
 
 const LayoutWithSidebar = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter()
@@ -49,7 +50,7 @@ const LayoutWithSidebar = ({ children }: { children: React.ReactNode }) => {
       }
     })
     setLocalChats(loadedChats)
-  }, [isLoaded, user])
+  }, [isLoaded, user, pathname])
 
   useEffect(() => {
     if (user) {
@@ -108,6 +109,8 @@ const LayoutWithSidebar = ({ children }: { children: React.ReactNode }) => {
       if (isMobile) {
         setSidebarOpen(false)
       }
+
+      setLocalChats(chats => [...chats, { id: newId, title: "New Chat" }])
     }
     
     // Auto-close sidebar on mobile after navigation
@@ -206,7 +209,7 @@ const LayoutWithSidebar = ({ children }: { children: React.ReactNode }) => {
 
                   <SidebarGroupLabel className="text-white text-lg font-semibold px-4">My Chats</SidebarGroupLabel>
                   
-                  {displayChats && displayChats.length > 0 ? displayChats.reverse().map((chat) => (
+                  {displayChats && displayChats.length > 0 ? displayChats.slice().reverse().map((chat) => (
                     chatId === (user ? chat._id : chat.id) ? (
                       <SidebarMenuItem key={user ? chat._id : chat.id} className="flex flex-row items-center gap-2" onClick={() => {
                         router.push(`/chat/${user ? chat._id : chat.id}`)

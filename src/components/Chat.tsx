@@ -2,38 +2,61 @@
 
 import React from "react"
 
-import { useState, useEffect, useRef, memo } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
-import { ArrowDownIcon, ArrowUp, CheckIcon, CopyIcon } from "lucide-react"
+import { ArrowDownIcon } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useMutation, useQuery } from "convex/react"
 import { api } from "../../convex/_generated/api"
 import type { Id } from "../../convex/_generated/dataModel"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { useUser } from "@clerk/nextjs"
 import { pushUserMessage, pushLocalUserMessage } from "@/actions/handleMessages"
-import Markdown from "react-markdown"
-import remarkGfm from "remark-gfm"
 import BackgroundEffects from "./BackgroundEffects"
-import { bundledLanguages, type BundledLanguage } from 'shiki'
 import useLocalStorage from "@/hooks/useLocalStorage"
 import ChatInput from "./ChatInput"
+import { fetchMutation, fetchQuery } from "convex/nextjs"
+import { generateNextCompletion } from "@/models/index"
 
 import '@/styles/markdown.css'
-import { CodeBlock } from "./CodeBlock"
 import models from "@/models/models"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
-import { useTheme } from "./ThemeProvider"
-import { LoadingDots } from "./ui/loading-dots"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion"
-import Image from "next/image"
-import featureIcons from "@/models/features"
+import UserMessage from "./UserMessage"
+import AIMessage from "./AIMessage"
+import generateId from "@/lib/generateId"
+
+// Global streaming state management
+const STREAMING_STATE_KEY = "open3:streamingState"
+
+interface StreamingState {
+  chatId: string
+  messageId: string
+  isStreaming: boolean
+  content: string
+  reasoning: string
+}
+
+const getStreamingState = (): StreamingState | null => {
+  if (typeof window === 'undefined') return null
+  const state = localStorage.getItem(STREAMING_STATE_KEY)
+  return state ? JSON.parse(state) : null
+}
+
+const setStreamingState = (state: StreamingState | null) => {
+  if (typeof window === 'undefined') return
+  if (state) {
+    localStorage.setItem(STREAMING_STATE_KEY, JSON.stringify(state))
+  } else {
+    localStorage.removeItem(STREAMING_STATE_KEY)
+  }
+}
 
 export default function Chat({ id }: { id: string }) {
   'use no memo'
   const router = useRouter()
   const { user, isLoaded } = useUser()
   const isStreamingRef = useRef(false)
+
+  const branchChat = useMutation(api.chats.branchChat)
 
   // Only query Convex if user is authenticated
   const chat = useQuery(api.chats.getChat, user ? { id: id as Id<"chats"> } : "skip")
@@ -75,6 +98,66 @@ export default function Chat({ id }: { id: string }) {
       localStorage.setItem(`open3:chat:${id}`, JSON.stringify(newChat))
     }
   }, [isLoaded, user, id])
+
+  // Check for ongoing streaming state when component mounts
+  useEffect(() => {
+    if (user) return // Skip for authenticated users
+    
+    const streamingState = getStreamingState()
+    if (streamingState && streamingState.chatId === id && streamingState.isStreaming) {
+      setIsStreaming(true)
+      setLastMessageId(streamingState.messageId)
+      isStreamingRef.current = true
+    }
+  }, [id, user])
+
+  // Poll for streaming state updates
+  useEffect(() => {
+    if (user) return // Skip for authenticated users
+    
+    const pollInterval = setInterval(() => {
+      const streamingState = getStreamingState()
+      if (streamingState && streamingState.chatId === id) {
+        if (streamingState.isStreaming) {
+          setIsStreaming(true)
+          setLastMessageId(streamingState.messageId)
+          
+          // Update local chat with streaming content
+          if (localChat) {
+            const updatedMessages = localChat.messages.map(msg => 
+              msg._id === streamingState.messageId 
+                ? { 
+                    ...msg, 
+                    content: streamingState.content,
+                    reasoning: streamingState.reasoning
+                  }
+                : msg
+            )
+            
+            const updatedChat = {
+              ...localChat,
+              messages: updatedMessages
+            }
+            
+            setLocalChat(updatedChat)
+          }
+        } else {
+          // Streaming finished
+          setIsStreaming(false)
+          isStreamingRef.current = false
+          setStreamingState(null)
+          
+          // Reload chat from localStorage to get final state
+          const storedChat = localStorage.getItem(`open3:chat:${id}`)
+          if (storedChat) {
+            setLocalChat(JSON.parse(storedChat))
+          }
+        }
+      }
+    }, 100) // Poll every 100ms for smooth updates
+
+    return () => clearInterval(pollInterval)
+  }, [id, user, localChat])
 
   useEffect(() => {
     if (!chat && !localChat) return
@@ -156,6 +239,15 @@ export default function Chat({ id }: { id: string }) {
         setIsStreaming(true)
         setLastMessageId(lastMessage._id)
         
+        // Set global streaming state
+        setStreamingState({
+          chatId: id,
+          messageId: lastMessage._id,
+          isStreaming: true,
+          content: "",
+          reasoning: ""
+        })
+        
         try {
           const userBYOK = window.localStorage.getItem("open3:openRouterApiKey")
           
@@ -186,6 +278,15 @@ export default function Chat({ id }: { id: string }) {
             if (chunk.reasoning) {
               fullReasoning += chunk.reasoning
             }
+            
+            // Update global streaming state
+            setStreamingState({
+              chatId: id,
+              messageId: lastMessage._id,
+              isStreaming: true,
+              content: fullResponse,
+              reasoning: fullReasoning
+            })
             
             // Update the AI message with new content
             const updatedMessages = localChat.messages.map(msg => 
@@ -229,6 +330,7 @@ export default function Chat({ id }: { id: string }) {
         } finally {
           isStreamingRef.current = false
           setIsStreaming(false)
+          setStreamingState(null) // Clear global streaming state
         }
       }
 
@@ -337,12 +439,12 @@ export default function Chat({ id }: { id: string }) {
       localStorage.setItem(`open3:chat:${id}`, JSON.stringify(updatedChat))
 
       // Create AI message placeholder
-      const aiMessageId = Math.random().toString(36).substring(2, 15)
+      const aiMessageId = generateId()
       const aiMessage = {
         _id: aiMessageId,
         role: "assistant",
         content: "",
-        timestamp: new Date().toISOString(),
+        timestamp: new Date(new Date().valueOf() + 100).toISOString(),
         model: models[selectedModel]!.id,
         isComplete: false,
         reasoning: ""
@@ -361,6 +463,15 @@ export default function Chat({ id }: { id: string }) {
       isStreamingRef.current = true
       setIsStreaming(true)
       setLastMessageId(aiMessageId)
+
+      // Set global streaming state
+      setStreamingState({
+        chatId: id,
+        messageId: aiMessageId,
+        isStreaming: true,
+        content: "",
+        reasoning: ""
+      })
 
       try {
         // Get AI response chunks with custom API key and system prompt
@@ -385,6 +496,15 @@ export default function Chat({ id }: { id: string }) {
           if (chunk.reasoning) {
             fullReasoning += chunk.reasoning
           }
+          
+          // Update global streaming state
+          setStreamingState({
+            chatId: id,
+            messageId: aiMessageId,
+            isStreaming: true,
+            content: fullResponse,
+            reasoning: fullReasoning
+          })
           
           // Update AI message with new content and reasoning
           const updatedMessages = chatWithAiMessage.messages.map(msg => 
@@ -426,10 +546,576 @@ export default function Chat({ id }: { id: string }) {
       } finally {
         isStreamingRef.current = false
         setIsStreaming(false)
+        setStreamingState(null) // Clear global streaming state
       }
     }
 
     setUserHasScrolled(false) // Reset scroll position when sending a message
+  }
+
+  const handleMessageRegenerate = async (messageId: string) => {
+    if (user) {
+      // For authenticated users
+      // Find the index of the message to regenerate from
+      const messageIndex = messages?.findIndex(m => m._id === messageId) || -1
+      if (messageIndex === -1) return
+
+      // Get the message to regenerate from
+      const messageToRegenerateFrom = messages?.[messageIndex]
+      if (!messageToRegenerateFrom || messageToRegenerateFrom.role !== "user") return
+
+      // Get all messages that need to be deleted (only the AI response after the user message)
+      const messagesToDelete = messages?.slice(messageIndex + 1) || []
+      
+      // Delete all messages after this user message (the AI responses)
+      for (const message of messagesToDelete) {
+        await fetchMutation(api.messages.deleteMessage, { id: message._id })
+      }
+      
+      // Create a new AI message directly instead of pushing a user message
+      const newAiMessage = await fetchMutation(api.messages.createMessage, {
+        chatId: id as Id<"chats">,
+        content: "",
+        role: "assistant",
+        model: models[selectedModel]!.id,
+        reasoning: ""
+      })
+
+      // Get the updated messages list (without the deleted AI responses)
+      const updatedMessages = await fetchQuery(api.messages.getMessagesForChat, {
+        chatId: id as Id<"chats">,
+      })
+
+      // Get user settings
+      const userSettings = await fetchQuery(api.userSettings.get, {
+        clerkId: user.id
+      })
+
+      const userBYOK = userSettings?.openRouterApiKey || null
+      const systemPromptDetails = {
+        customPrompt: userSettings?.customPrompt || false,
+        customPromptText: userSettings?.customPromptText || ""
+      }
+
+      // Generate the AI response
+      const aiResponse = await generateNextCompletion(
+        userBYOK !== null && userBYOK !== "" ? models[selectedModel]!.id : (models.find((val) => val.id === models[selectedModel]!.id)?.features.includes('free') ? models[selectedModel]!.id : 'deepseek/deepseek-chat-v3-0324:free'),
+        updatedMessages.map((message: any) => ({
+          role: message.role,
+          content: message.content
+        })),
+        userBYOK,
+        systemPromptDetails
+      )
+
+      if ('error' in aiResponse && aiResponse.error === true) {
+        await fetchMutation(api.messages.appendMessage, {
+          id: newAiMessage,
+          content: `Error processing your request: ${aiResponse.message}`
+        })
+        return
+      }
+
+      for await (const chunk of aiResponse.fullStream) {
+        if (!chunk) continue
+        
+        if (chunk.type === 'text-delta') {
+          await fetchMutation(api.messages.appendMessage, {
+            id: newAiMessage,
+            content: chunk.textDelta
+          })
+        } else if (chunk.type === 'reasoning') {
+          // Handle reasoning if the model provides it
+          await fetchMutation(api.messages.appendReasoning, {
+            id: newAiMessage,
+            reasoning: chunk.textDelta
+          })
+        }
+      }
+
+      await fetchMutation(api.messages.completeMessage, {
+        id: newAiMessage
+      })
+
+    } else {
+      // For unauthenticated users
+      if (!localChat) return
+
+      // Find the index of the message to regenerate from
+      const messageIndex = localChat.messages.findIndex(m => m._id === messageId)
+      if (messageIndex === -1) return
+
+      // Get the message to regenerate from
+      const messageToRegenerateFrom = localChat.messages[messageIndex]
+      if (!messageToRegenerateFrom || messageToRegenerateFrom.role !== "user") return
+
+      // Keep only messages up to and including the selected user message
+      const messagesToKeep = localChat.messages.slice(0, messageIndex + 1)
+      
+      // Update local chat with truncated messages
+      const updatedChat = {
+        ...localChat,
+        messages: messagesToKeep
+      }
+      
+      setLocalChat(updatedChat)
+      localStorage.setItem(`open3:chat:${id}`, JSON.stringify(updatedChat))
+
+      // Create AI message placeholder
+      const aiMessageId = generateId()
+      const aiMessage = {
+        _id: aiMessageId,
+        role: "assistant",
+        content: "",
+        timestamp: new Date(new Date().valueOf() + 100).toISOString(),
+        model: models[selectedModel]!.id,
+        isComplete: false,
+        reasoning: ""
+      }
+
+      // Add empty AI message to chat
+      const chatWithAiMessage = {
+        ...updatedChat,
+        messages: [...updatedChat.messages, aiMessage]
+      }
+      
+      setLocalChat(chatWithAiMessage)
+      localStorage.setItem(`open3:chat:${id}`, JSON.stringify(chatWithAiMessage))
+
+      // Set streaming state before starting response generation
+      isStreamingRef.current = true
+      setIsStreaming(true)
+      setLastMessageId(aiMessageId)
+
+      // Set global streaming state
+      setStreamingState({
+        chatId: id,
+        messageId: aiMessageId,
+        isStreaming: true,
+        content: "",
+        reasoning: ""
+      })
+
+      try {
+        // Get user settings from local storage
+        const userBYOK = window.localStorage.getItem("open3:openRouterApiKey")
+        const systemPromptDetails = {
+          customPrompt: JSON.parse(window.localStorage.getItem("open3:customPrompt") || "false"),
+          customPromptText: window.localStorage.getItem("open3:customPromptText") || ""
+        }
+
+        // Get AI response chunks
+        const chunks = await pushLocalUserMessage(
+          id, 
+          messageToRegenerateFrom.content, 
+          models[selectedModel]!.id,
+          updatedChat,
+          userBYOK,
+          systemPromptDetails
+        )
+        
+        let fullResponse = ""
+        let fullReasoning = ""
+        
+        for await (const chunk of chunks) {
+          if (!isStreamingRef.current) break // Stop if streaming was cancelled
+          
+          if (chunk.content) {
+            fullResponse += chunk.content
+          }
+          if (chunk.reasoning) {
+            fullReasoning += chunk.reasoning
+          }
+          
+          // Update global streaming state
+          setStreamingState({
+            chatId: id,
+            messageId: aiMessageId,
+            isStreaming: true,
+            content: fullResponse,
+            reasoning: fullReasoning
+          })
+          
+          // Update AI message with new content
+          const updatedMessages = chatWithAiMessage.messages.map(msg => 
+            msg._id === aiMessageId 
+              ? { 
+                  ...msg, 
+                  content: fullResponse,
+                  reasoning: fullReasoning
+                }
+              : msg
+          )
+          
+          const updatedChatWithResponse = {
+            ...chatWithAiMessage,
+            messages: updatedMessages
+          }
+          
+          setLocalChat(updatedChatWithResponse)
+          localStorage.setItem(`open3:chat:${id}`, JSON.stringify(updatedChatWithResponse))
+        }
+
+        // Mark the message as complete
+        const finalMessages = chatWithAiMessage.messages.map(msg => 
+          msg._id === aiMessageId 
+            ? { ...msg, isComplete: true, content: fullResponse, reasoning: fullReasoning }
+            : msg
+        )
+        
+        const finalChat = {
+          ...chatWithAiMessage,
+          messages: finalMessages
+        }
+        
+        setLocalChat(finalChat)
+        localStorage.setItem(`open3:chat:${id}`, JSON.stringify(finalChat))
+      } finally {
+        isStreamingRef.current = false
+        setIsStreaming(false)
+        setStreamingState(null) // Clear global streaming state
+      }
+    }
+
+    setUserHasScrolled(false) // Reset scroll position when regenerating a message
+  }
+
+  const handleMessageEdit = async (messageId: string, newMessage: string) => {
+    if (user) {
+      // For authenticated users
+      // Find the index of the message to edit
+      const messageIndex = messages?.findIndex(m => m._id === messageId) || -1
+      if (messageIndex === -1) return
+
+      // Get the message to edit
+      const messageToEdit = messages?.[messageIndex]
+      if (!messageToEdit || messageToEdit.role !== "user") return
+      
+      // Get all messages that need to be deleted (the edited message and everything after it)
+      const messagesToDelete = messages?.slice(messageIndex) || []
+      
+      // Delete all messages after and including the edited one
+      for (const message of messagesToDelete) {
+        await fetchMutation(api.messages.deleteMessage, { id: message._id })
+      }
+      
+      // Push the edited user message to trigger a new AI response
+      pushUserMessage(id as Id<"chats">, newMessage, models[selectedModel]!.id, user.id)
+    } else {
+      // For unauthenticated users
+      if (!localChat) return
+
+      // Find the index of the message to edit
+      const messageIndex = localChat.messages.findIndex(m => m._id === messageId)
+      if (messageIndex === -1) return
+
+      // Get the message to edit
+      const messageToEdit = localChat.messages[messageIndex]
+      if (!messageToEdit || messageToEdit.role !== "user") return
+
+      // Create a new message with the edited content but keep the same ID
+      const editedMessage = {
+        ...messageToEdit,
+        content: newMessage
+      }
+
+      // Keep only messages up to the edited message (exclusive)
+      const messagesToKeep = localChat.messages.slice(0, messageIndex)
+      
+      // Update local chat with truncated messages plus the edited message
+      const updatedChat = {
+        ...localChat,
+        messages: [...messagesToKeep, editedMessage]
+      }
+      
+      setLocalChat(updatedChat)
+      localStorage.setItem(`open3:chat:${id}`, JSON.stringify(updatedChat))
+
+      // Create AI message placeholder
+      const aiMessageId = generateId()
+      const aiMessage = {
+        _id: aiMessageId,
+        role: "assistant",
+        content: "",
+        timestamp: new Date(new Date().valueOf() + 100).toISOString(),
+        model: models[selectedModel]!.id,
+        isComplete: false,
+        reasoning: ""
+      }
+
+      // Add empty AI message to chat
+      const chatWithAiMessage = {
+        ...updatedChat,
+        messages: [...updatedChat.messages, aiMessage]
+      }
+      
+      setLocalChat(chatWithAiMessage)
+      localStorage.setItem(`open3:chat:${id}`, JSON.stringify(chatWithAiMessage))
+
+      // Set streaming state before starting response generation
+      isStreamingRef.current = true
+      setIsStreaming(true)
+      setLastMessageId(aiMessageId)
+
+      // Set global streaming state
+      setStreamingState({
+        chatId: id,
+        messageId: aiMessageId,
+        isStreaming: true,
+        content: "",
+        reasoning: ""
+      })
+
+      try {
+        // Get user settings from local storage
+        const userBYOK = window.localStorage.getItem("open3:openRouterApiKey")
+        const systemPromptDetails = {
+          customPrompt: JSON.parse(window.localStorage.getItem("open3:customPrompt") || "false"),
+          customPromptText: window.localStorage.getItem("open3:customPromptText") || ""
+        }
+
+        // Get AI response chunks
+        const chunks = await pushLocalUserMessage(
+          id, 
+          newMessage, 
+          models[selectedModel]!.id,
+          updatedChat,
+          userBYOK,
+          systemPromptDetails
+        )
+        
+        let fullResponse = ""
+        let fullReasoning = ""
+        
+        for await (const chunk of chunks) {
+          if (!isStreamingRef.current) break // Stop if streaming was cancelled
+          
+          if (chunk.content) {
+            fullResponse += chunk.content
+          }
+          if (chunk.reasoning) {
+            fullReasoning += chunk.reasoning
+          }
+          
+          // Update global streaming state
+          setStreamingState({
+            chatId: id,
+            messageId: aiMessageId,
+            isStreaming: true,
+            content: fullResponse,
+            reasoning: fullReasoning
+          })
+          
+          // Update AI message with new content
+          const updatedMessages = chatWithAiMessage.messages.map(msg => 
+            msg._id === aiMessageId 
+              ? { 
+                  ...msg, 
+                  content: fullResponse,
+                  reasoning: fullReasoning
+                }
+              : msg
+          )
+          
+          const updatedChatWithResponse = {
+            ...chatWithAiMessage,
+            messages: updatedMessages
+          }
+          
+          setLocalChat(updatedChatWithResponse)
+          localStorage.setItem(`open3:chat:${id}`, JSON.stringify(updatedChatWithResponse))
+        }
+
+        // Mark the message as complete
+        const finalMessages = chatWithAiMessage.messages.map(msg => 
+          msg._id === aiMessageId 
+            ? { ...msg, isComplete: true, content: fullResponse, reasoning: fullReasoning }
+            : msg
+        )
+        
+        const finalChat = {
+          ...chatWithAiMessage,
+          messages: finalMessages
+        }
+        
+        setLocalChat(finalChat)
+        localStorage.setItem(`open3:chat:${id}`, JSON.stringify(finalChat))
+      } finally {
+        isStreamingRef.current = false
+        setIsStreaming(false)
+        setStreamingState(null) // Clear global streaming state
+      }
+    }
+
+    setUserHasScrolled(false) // Reset scroll position when editing a message
+  }
+
+  const handleMessageBranch = async (messageId: string) => {
+    if (user) {
+      const newChatId = await branchChat({
+        clerkId: user.id,
+        chatId: id as Id<"chats">,
+        messageId: messageId as Id<"messages">,
+      })
+
+      const baseMessage = messages?.find((m) => m._id === messageId)
+
+      // Only push a user message and generate AI response if we're branching from a user message
+      if (baseMessage?.role === "user") {
+        pushUserMessage(newChatId as Id<"chats">, baseMessage.content || "", models[selectedModel]!.id, user.id)
+      }
+
+      router.push(`/chat/${newChatId}`)
+    } else {
+      if (!localChat) return
+
+      const newChatId = generateId()
+      const allLocalChatIds = JSON.parse(localStorage.getItem("open3:chatIds") || "[]") as string[]
+      allLocalChatIds.push(newChatId)
+      localStorage.setItem("open3:chatIds", JSON.stringify(allLocalChatIds))
+
+      let messagesToSend: any[] = []
+
+      const baseMessage = localChat.messages.find((m) => m._id === messageId)
+      if (!baseMessage) return
+
+      for (const message of localChat.messages || []) {
+        if ((new Date(message.timestamp)).valueOf() <= (new Date(baseMessage.timestamp)).valueOf()) {
+          messagesToSend.push(message)
+        }
+      }
+
+      const newChat = {
+        title: "New Chat",
+        messages: messagesToSend
+      }
+      localStorage.setItem(`open3:chat:${newChatId}`, JSON.stringify(newChat))
+
+      // Navigate to the new chat first
+      router.push(`/chat/${newChatId}`)
+
+      // Only add an AI message and generate a response if we're branching from a user message
+      if (baseMessage.role === "user") {
+        // Create AI message placeholder for the branched chat
+        const aiMessageId = generateId()
+        const aiMessage = {
+          _id: aiMessageId,
+          role: "assistant",
+          content: "",
+          timestamp: new Date(new Date().valueOf() + 100).toISOString(),
+          model: models[selectedModel]!.id,
+          isComplete: false,
+          reasoning: ""
+        }
+
+        // Add empty AI message to the branched chat
+        const chatWithAiMessage = {
+          ...newChat,
+          messages: [...newChat.messages, aiMessage]
+        }
+        
+        localStorage.setItem(`open3:chat:${newChatId}`, JSON.stringify(chatWithAiMessage))
+
+        // Get user settings from local storage
+        const userBYOK = window.localStorage.getItem("open3:openRouterApiKey")
+        const systemPromptDetails = {
+          customPrompt: JSON.parse(window.localStorage.getItem("open3:customPrompt") || "false"),
+          customPromptText: window.localStorage.getItem("open3:customPromptText") || ""
+        }
+
+        // Set global streaming state for the branched chat
+        setStreamingState({
+          chatId: newChatId,
+          messageId: aiMessageId,
+          isStreaming: true,
+          content: "",
+          reasoning: ""
+        })
+
+        // Generate response for the branched chat
+        try {
+          const chunks = await pushLocalUserMessage(
+            newChatId, 
+            baseMessage.content || "", 
+            models[selectedModel]!.id,
+            newChat,
+            userBYOK,
+            systemPromptDetails
+          )
+          
+          let fullResponse = ""
+          let fullReasoning = ""
+          
+          for await (const chunk of chunks) {
+            if (chunk.content) {
+              fullResponse += chunk.content
+            }
+            if (chunk.reasoning) {
+              fullReasoning += chunk.reasoning
+            }
+            
+            // Update global streaming state
+            setStreamingState({
+              chatId: newChatId,
+              messageId: aiMessageId,
+              isStreaming: true,
+              content: fullResponse,
+              reasoning: fullReasoning
+            })
+            
+            // Update the AI message with new content
+            const updatedMessages = chatWithAiMessage.messages.map(msg => 
+              msg._id === aiMessageId 
+                ? { 
+                    ...msg, 
+                    content: fullResponse,
+                    reasoning: fullReasoning
+                  }
+                : msg
+            )
+            
+            const updatedChat = {
+              ...chatWithAiMessage,
+              messages: updatedMessages
+            }
+            
+            localStorage.setItem(`open3:chat:${newChatId}`, JSON.stringify(updatedChat))
+          }
+
+          // Mark the message as complete
+          const finalMessages = chatWithAiMessage.messages.map(msg => 
+            msg._id === aiMessageId 
+              ? { ...msg, isComplete: true, content: fullResponse, reasoning: fullReasoning }
+              : msg
+          )
+          
+          const finalChat = {
+            ...chatWithAiMessage,
+            messages: finalMessages
+          }
+          
+          localStorage.setItem(`open3:chat:${newChatId}`, JSON.stringify(finalChat))
+        } catch (error) {
+          console.error("Error generating response for branched chat:", error)
+          // If there's an error, still mark the message as complete with an error message
+          const errorMessages = chatWithAiMessage.messages.map(msg => 
+            msg._id === aiMessageId 
+              ? { ...msg, isComplete: true, content: "Error generating response. Please try again.", reasoning: "" }
+              : msg
+          )
+          
+          const errorChat = {
+            ...chatWithAiMessage,
+            messages: errorMessages
+          }
+          
+          localStorage.setItem(`open3:chat:${newChatId}`, JSON.stringify(errorChat))
+        } finally {
+          // Clear global streaming state
+          setStreamingState(null)
+        }
+      }
+    }
   }
 
   // Get messages based on authentication status
@@ -445,15 +1131,18 @@ export default function Chat({ id }: { id: string }) {
         {/* Chat Messages */}
         <div className="h-full">
           <ScrollArea className="min-h-screen h-full p-6" ref={scrollAreaRef} type="hidden">
-            <div className="max-w-4xl mx-auto space-y-6">
+            <div className="max-w-4xl mx-auto space-y-6 pt-8">
               {displayMessages && displayMessages.length > 0 ? displayMessages.map((message) => (
                 <div key={message._id} className="w-full">
                   {message.role === "user" ? (
-                    // User message with bubble
-                    <UserMessage message={message} />
+                    <UserMessage
+                      onMessageRegenerate={() => handleMessageRegenerate(message._id)}
+                      onMessageEdit={(newMessage: string) => handleMessageEdit(message._id, newMessage)}
+                      onMessageBranch={() => handleMessageBranch(message._id)}
+                      message={message}
+                    />
                   ) : (
-                    // AI message directly on background
-                    <AIMessage message={message} />
+                    <AIMessage message={message} onMessageBranch={() => handleMessageBranch(message._id)} />
                   )}
                 </div>
               )) : (
@@ -485,114 +1174,5 @@ export default function Chat({ id }: { id: string }) {
         </div>
       </div>
     </div>
-  )
-}
-
-const UserMessage = ({ message }: { message: { content: string } }) => {
-  return (
-    <div className="flex justify-end user-message">
-      <div className="max-w-[60%] bg-neutral-900 border border-accent/20 text-neutral-50 rounded-2xl px-4 py-3">
-        <div className="whitespace-pre-wrap break-words text-sm leading-relaxed">
-          {applyUserCodeBlocks(message.content)}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-const AIMessage = memo(({ message }: { message: { content: string, model: string, isComplete: boolean, reasoning?: string } }) => {
-  return (
-    <div className="w-full">
-      <div className="whitespace-pre-wrap break-words text-sm leading-relaxed text-neutral-100 max-w-[100%] md:max-w-[80%] markdown">
-        {message.reasoning === "" && message.content === "" ? (
-          <LoadingDots className="mt-2" />
-        ) : (
-          <>
-            {message.reasoning && (
-              <Accordion type="single" collapsible className="w-full" defaultValue="">
-                <AccordionItem value="reasoning">
-                    <AccordionTrigger className="text-sm text-neutral-300 hover:text-neutral-100 cursor-pointer">
-                      Reasoning
-                    </AccordionTrigger>
-                  <AccordionContent className="text-sm text-neutral-300">
-                    {message.reasoning}
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            )}
-            <Markdown
-              remarkPlugins={[remarkGfm]}
-              components={{
-                pre: ({ node, ...props }) => {
-                  // @ts-ignore
-                  const language = (node?.children?.[0]?.properties?.className?.[0] || "language-text").replace('language-', '')
-                  return <div className="flex flex-col gap-0 mb-2">
-                    <div className="py-2 px-4 text-sm text-[oklch(0.80_0.05_300)] bg-neutral-800 flex items-center justify-between">
-                      <span>{language}</span>
-                      <div>
-                        <CopyIcon
-                          className="h-full aspect-square hover:bg-zinc-700 p-1.25 rounded-sm cursor-pointer hover:text-zinc-100 transition-all"
-                          //@ts-ignore
-                          onClick={() => navigator.clipboard.writeText(node.children[0].children[0].value)}
-                        />
-                      </div>
-                    </div>
-                    <CodeBlock lang={Object.keys(bundledLanguages).includes(language) ? language : 'text'}>
-                      {/* @ts-ignore */}
-                      {node.children[0].children[0].value}
-                    </CodeBlock>
-                  </div>
-                }
-              }}
-            >{message.content}</Markdown>
-          </>
-        )}
-        <div className="mt-1 text-xs text-neutral-500 flex flex-row items-center gap-1">
-          Generated by {models.find((model) => model.id === message.model)?.name}
-          {message.isComplete && <CheckIcon className="size-4 text-green-500" />}
-        </div>
-      </div>
-    </div>
-  )
-})
-
-const applyUserCodeBlocks = (message: string) => {
-  // let res = message
-
-  let chunks = message.split('```')
-
-  if (chunks.length === 0) return message
-
-  return (
-    <>
-      {chunks.map((chunk: string, index: number) => {
-        if (index % 2 === 0) return <React.Fragment key={index}>{chunk}</React.Fragment>
-
-        const language = (chunk.match(/^[a-z]*\n/i) || ['text'])[0].replace('\n', '')
-
-        if (language !== 'text')
-          chunk = chunk.replace(language + '\n', '')
-
-        // return <CodeBlock key={index} lang={language as BundledLanguage}>
-        //   {chunk}
-        // </CodeBlock>
-
-        return <div key={index} className="flex flex-col gap-0">
-          <div className="py-2 px-4 text-sm text-[oklch(0.80_0.05_300)] bg-neutral-800 flex items-center justify-between">
-            <span>{language}</span>
-            <div>
-              <CopyIcon
-                className="h-full aspect-square hover:bg-zinc-700 p-1.25 rounded-sm cursor-pointer hover:text-zinc-100 transition-all"
-                //@ts-ignore
-                onClick={() => navigator.clipboard.writeText(chunk)}
-              />
-            </div>
-          </div>
-          <CodeBlock lang={language as BundledLanguage}>
-            {chunk}
-          </CodeBlock>
-        </div>
-      })}
-    </>
   )
 }

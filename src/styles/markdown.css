@@ -1,11 +1,5 @@
 .markdown,
 .user-message {
-  width: 100%;
-
-  & div:not(:has(svg, img)) {
-    width: 100%;
-  }
-  
   div:has(> pre) {
     font-size: 1rem;
     font-family: 'Fira Code', monospace;
@@ -36,6 +30,12 @@
 }
 
 .markdown {
+  width: 100%;
+
+  & div:not(:has(svg, img)) {
+    width: 100%;
+  }
+  
   font-size: 1rem;
   line-height: 1.5;
 

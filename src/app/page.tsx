@@ -14,6 +14,7 @@ import { useTheme } from "@/components/ThemeProvider"
 import ChatInput from "@/components/ChatInput"
 import useLocalStorage from "@/hooks/useLocalStorage"
 import Link from "next/link"
+import generateId from "@/lib/generateId"
 
 const examples: string[] = [
   "Teach me something I might not know.",
@@ -28,10 +29,6 @@ const HomePage = () => {
   const { colorTheme } = useTheme()
   const createChat = useMutation(api.chats.createChat)
   const [selectedModel, setSelectedModel] = useLocalStorage("open3:selectedModel", 0)
-
-  const generateId = () => {
-    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
-  }
 
   const makeNewChat = async (firstMessage: string = "") => {
     if (!user?.id) {
@@ -63,7 +60,7 @@ const HomePage = () => {
         if (!selectedModelData) return
 
         // Add user message
-        const userMessageId = Math.random().toString(36).substring(2, 15)
+        const userMessageId = generateId()
         chatData.messages.push({
           _id: userMessageId,
           role: "user",
@@ -73,7 +70,7 @@ const HomePage = () => {
         })
 
         // Add empty AI message placeholder
-        const aiMessageId = Math.random().toString(36).substring(2, 15)
+        const aiMessageId = generateId()
         chatData.messages.push({
           _id: aiMessageId,
           role: "assistant",
