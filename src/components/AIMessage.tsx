@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react"
+import { memo } from "react"
 import { LoadingDots } from "./ui/loading-dots"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion"
 import remarkGfm from "remark-gfm"
@@ -10,7 +10,7 @@ import models from "@/models/models"
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip"
 
 const AIMessage = memo(({ message, onMessageBranch }: { message: { content: string, model: string, isComplete: boolean, reasoning?: string }, onMessageBranch: () => void }) => {
-  const messageActions = useMemo(() => [
+  const messageActions = [
     {
       icon: CopyIcon,
       onClick: () => navigator.clipboard.writeText(message.content),
@@ -21,35 +21,7 @@ const AIMessage = memo(({ message, onMessageBranch }: { message: { content: stri
       onClick: onMessageBranch,
       tooltip: "Branch chat"
     },
-  ], [message.content, onMessageBranch])
-
-  // Memoize the markdown components to prevent unnecessary re-renders
-  const markdownComponents = useMemo(() => ({
-    pre: ({ node, ...props }: any) => {
-      const language = (node?.children?.[0]?.properties?.className?.[0] || "language-text").replace('language-', '')
-      const codeContent = node?.children?.[0]?.children?.[0]?.value || ''
-      
-      return (
-        <div className="flex flex-col gap-0 mb-2">
-          <div className="py-2 px-4 text-sm text-[oklch(0.80_0.05_300)] bg-neutral-800 flex items-center justify-between">
-            <span>{language}</span>
-            <div>
-              <CopyIcon
-                className="h-full aspect-square hover:bg-zinc-700 p-1.25 rounded-sm cursor-pointer hover:text-zinc-100 transition-all"
-                onClick={() => navigator.clipboard.writeText(codeContent)}
-              />
-            </div>
-          </div>
-          <CodeBlock 
-            lang={Object.keys(bundledLanguages).includes(language) ? language : 'text'}
-            key={`${language}-${codeContent.substring(0, 50)}`}
-          >
-            {codeContent}
-          </CodeBlock>
-        </div>
-      )
-    }
-  }), [])
+  ]
 
   return (
     <div className="w-full group/aiMessage">
@@ -72,7 +44,28 @@ const AIMessage = memo(({ message, onMessageBranch }: { message: { content: stri
             )}
             <Markdown
               remarkPlugins={[remarkGfm]}
-              components={markdownComponents}
+              components={{
+                pre: ({ node, ...props }) => {
+                  // @ts-ignore
+                  const language = (node?.children?.[0]?.properties?.className?.[0] || "language-text").replace('language-', '')
+                  return <div className="flex flex-col gap-0 mb-2">
+                    <div className="py-2 px-4 text-sm text-[oklch(0.80_0.05_300)] bg-neutral-800 flex items-center justify-between">
+                      <span>{language}</span>
+                      <div>
+                        <CopyIcon
+                          className="h-full aspect-square hover:bg-zinc-700 p-1.25 rounded-sm cursor-pointer hover:text-zinc-100 transition-all"
+                          //@ts-ignore
+                          onClick={() => navigator.clipboard.writeText(node.children[0].children[0].value)}
+                        />
+                      </div>
+                    </div>
+                    <CodeBlock lang={Object.keys(bundledLanguages).includes(language) ? language : 'text'}>
+                      {/* @ts-ignore */}
+                      {node.children[0].children[0].value}
+                    </CodeBlock>
+                  </div>
+                }
+              }}
             >{message.content}</Markdown>
           </>
         )}
