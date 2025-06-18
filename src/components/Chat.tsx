@@ -447,7 +447,7 @@ export default function Chat({ id }: { id: string }) {
         {/* Chat Messages */}
         <div className="h-full">
           <ScrollArea className="min-h-screen h-full p-6" ref={scrollAreaRef} type="hidden">
-            <div className="max-w-4xl mx-auto space-y-6">
+            <div className="max-w-4xl mx-auto space-y-6 pt-8">
               {displayMessages && displayMessages.length > 0 ? displayMessages.map((message) => (
                 <div key={message._id} className="w-full">
                   {message.role === "user" ? (
