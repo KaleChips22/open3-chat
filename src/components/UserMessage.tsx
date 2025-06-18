@@ -129,7 +129,7 @@ const UserMessage = (
             <Tooltip key={index}>
               <TooltipTrigger asChild>
                 <action.icon 
-                  className="size-8 group-hover/userMessage:text-accent text-accent sm:text-transparent group-hover/userMessage:hover:text-white cursor-pointer p-2 hover:bg-neutral-800 rounded-md" 
+                  className="size-8 group-hover/userMessage:text-accent text-transparent group-hover/userMessage:hover:text-white cursor-pointer p-2 hover:bg-neutral-800 rounded-md" 
                   onClick={action.onClick}
                 />
               </TooltipTrigger>
