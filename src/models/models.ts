@@ -66,6 +66,7 @@ const models = [
     id: "google/gemini-2.0-flash-001",
     icon: gemini,
     features: [
+      "free",
       "fast",
     ]
   },
