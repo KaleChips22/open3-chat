@@ -125,7 +125,7 @@ const models = [
   },
   {
     name: "Grok 3",
-    id: "xai/grok-3-beta",
+    id: "x-ai/grok-3-beta",
     icon: grok,
     features: [
       "reasoning",
@@ -133,7 +133,7 @@ const models = [
   },
   {
     name: "Grok 3 Mini",
-    id: "xai/grok-3-mini-beta",
+    id: "x-ai/grok-3-mini-beta",
     icon: grok,
     features: [
       "reasoning",
